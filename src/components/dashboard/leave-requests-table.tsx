@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
 
 type Status = "Pending" | "Approved" | "Rejected";
 
@@ -58,35 +59,44 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
   const { role } = useRole();
   const { toast } = useToast();
 
-  const handleStatusChange = (id: string, status: Status) => {
-    setLeaveRequests(
-      leaveRequests.map((req) => (req.id === id ? { ...req, status } : req))
-    );
-    toast({ title: `Leave Request ${status}`, description: `The request has been ${status.toLowerCase()}.` });
+  const handleStatusChange = async (id: string, status: Status) => {
+    try {
+      await updateLeaveRequestStatus(id, status);
+      setLeaveRequests(
+        leaveRequests.map((req) => (req.id === id ? { ...req, status } : req))
+      );
+      toast({ title: `Leave Request ${status}`, description: `The request has been ${status.toLowerCase()}.` });
+    } catch(error) {
+       toast({ title: "Error", description: "Failed to update leave request.", variant: "destructive" });
+    }
   };
 
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const employeeId = formData.get('employeeId') as string;
     const employee = employees.find(emp => emp.id === employeeId);
 
     const leaveData = {
-      leaveType: formData.get('leaveType'),
-      startDate: formData.get('startDate'),
-      endDate: formData.get('endDate'),
+      leaveType: formData.get('leaveType') as LeaveRequest['leaveType'],
+      startDate: formData.get('startDate') as string,
+      endDate: formData.get('endDate') as string,
     };
     
-    const newRequest: LeaveRequest = {
-      id: `l${leaveRequests.length + 1}`,
+    const newRequestData: Omit<LeaveRequest, 'id'> = {
       employeeName: employee?.name || 'Unknown',
       employeeId: employeeId,
       status: 'Pending',
       ...leaveData,
-    } as LeaveRequest;
+    };
     
-    setLeaveRequests([...leaveRequests, newRequest]);
-    toast({ title: "Leave Request Submitted", description: "Your request has been sent for approval." });
+    try {
+      const newRequest = await addLeaveRequest(newRequestData);
+      setLeaveRequests([...leaveRequests, newRequest]);
+      toast({ title: "Leave Request Submitted", description: "Your request has been sent for approval." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to submit leave request.", variant: "destructive" });
+    }
     
     setIsDialogOpen(false);
   };

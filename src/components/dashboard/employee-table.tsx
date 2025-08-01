@@ -39,6 +39,7 @@ import {
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { departments } from "@/lib/data"; // Keep for dropdown
+import { addEmployee, deleteEmployee, updateEmployee } from "@/lib/firestore";
 
 const roleColors: Record<UserRole, string> = {
   Owner: "bg-amber-500",
@@ -63,31 +64,42 @@ export default function EmployeeTable({ initialEmployees }: EmployeeTableProps) 
     setIsDialogOpen(true);
   };
   
-  const handleDelete = (id: string) => {
-    // TODO: Implement actual delete from Firestore
-    setEmployees(employees.filter((e) => e.id !== id));
-    toast({ title: "Employee Deleted", description: "The employee has been removed (UI only)." });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteEmployee(id);
+      setEmployees(employees.filter((e) => e.id !== id));
+      toast({ title: "Employee Deleted", description: "The employee has been removed." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete employee.", variant: "destructive" });
+    }
   };
   
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const employeeData = Object.fromEntries(formData.entries()) as Omit<Employee, 'id' | 'avatar'>;
+    const employeeData = Object.fromEntries(formData.entries()) as Omit<Employee, 'id' | 'avatar'> & { role: UserRole };
     
     if (editingEmployee) {
-      // TODO: Implement actual update in Firestore
       const updatedEmployee = { ...editingEmployee, ...employeeData };
-      setEmployees(employees.map(emp => emp.id === editingEmployee.id ? updatedEmployee : emp));
-      toast({ title: "Employee Updated", description: "Employee details have been saved (UI only)." });
+      try {
+        await updateEmployee(updatedEmployee);
+        setEmployees(employees.map(emp => emp.id === editingEmployee.id ? updatedEmployee : emp));
+        toast({ title: "Employee Updated", description: "Employee details have been saved." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to update employee.", variant: "destructive" });
+      }
     } else {
-      // TODO: Implement actual add to Firestore
-      const newEmployee: Employee = {
-        id: (employees.length + 1).toString(),
+      const newEmployeeData = {
         ...employeeData,
-        avatar: "/avatars/new.png",
+        avatar: `https://placehold.co/40x40.png?text=${employeeData.name.charAt(0)}`,
       };
-      setEmployees([...employees, newEmployee]);
-      toast({ title: "Employee Added", description: "A new employee has been added (UI only)." });
+      try {
+        const newEmployee = await addEmployee(newEmployeeData);
+        setEmployees([...employees, newEmployee]);
+        toast({ title: "Employee Added", description: "A new employee has been added." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to add employee.", variant: "destructive" });
+      }
     }
     
     setIsDialogOpen(false);

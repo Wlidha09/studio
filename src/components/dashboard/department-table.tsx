@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { addDepartment, deleteDepartment, updateDepartment } from "@/lib/firestore";
 
 interface DepartmentTableProps {
   initialDepartments: Department[];
@@ -53,27 +54,38 @@ export default function DepartmentTable({ initialDepartments, employees }: Depar
     setIsDialogOpen(true);
   };
   
-  const handleDelete = (id: string) => {
-    setDepartments(departments.filter((d) => d.id !== id));
-    toast({ title: "Department Deleted", description: "The department has been removed." });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDepartment(id);
+      setDepartments(departments.filter((d) => d.id !== id));
+      toast({ title: "Department Deleted", description: "The department has been removed." });
+    } catch(error) {
+      toast({ title: "Error", description: "Failed to delete department.", variant: "destructive" });
+    }
   };
   
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const departmentData = Object.fromEntries(formData.entries()) as Omit<Department, 'id'>;
 
     if (editingDepartment) {
       const updatedDepartment = { ...editingDepartment, ...departmentData };
-      setDepartments(departments.map(dep => dep.id === editingDepartment.id ? updatedDepartment : dep));
-      toast({ title: "Department Updated", description: "Department details have been saved." });
+      try {
+        await updateDepartment(updatedDepartment);
+        setDepartments(departments.map(dep => dep.id === editingDepartment.id ? updatedDepartment : dep));
+        toast({ title: "Department Updated", description: "Department details have been saved." });
+      } catch(error) {
+        toast({ title: "Error", description: "Failed to update department.", variant: "destructive" });
+      }
     } else {
-      const newDepartment: Department = {
-        id: `d${departments.length + 1}`,
-        ...departmentData,
-      };
-      setDepartments([...departments, newDepartment]);
-      toast({ title: "Department Added", description: "A new department has been added." });
+      try {
+        const newDepartment = await addDepartment(departmentData);
+        setDepartments([...departments, newDepartment]);
+        toast({ title: "Department Added", description: "A new department has been added." });
+      } catch(error) {
+        toast({ title: "Error", description: "Failed to add department.", variant: "destructive" });
+      }
     }
     
     setIsDialogOpen(false);

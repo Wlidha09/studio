@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { addCandidate, deleteCandidate, updateCandidate } from "@/lib/firestore";
 
 type Status = "Applied" | "Interviewing" | "Offered" | "Hired" | "Rejected";
 
@@ -64,28 +65,42 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
     setIsDialogOpen(true);
   };
   
-  const handleDelete = (id: string) => {
-    setCandidates(candidates.filter((c) => c.id !== id));
-    toast({ title: "Candidate Deleted", description: "The candidate has been removed." });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCandidate(id);
+      setCandidates(candidates.filter((c) => c.id !== id));
+      toast({ title: "Candidate Deleted", description: "The candidate has been removed." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete candidate.", variant: "destructive" });
+    }
   };
   
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const candidateData = Object.fromEntries(formData.entries()) as Omit<Candidate, 'id' | 'avatar'>;
+    const candidateData = Object.fromEntries(formData.entries()) as Omit<Candidate, 'id' | 'avatar'> & {status: Status};
 
     if (editingCandidate) {
       const updatedCandidate = { ...editingCandidate, ...candidateData };
-      setCandidates(candidates.map(cand => cand.id === editingCandidate.id ? updatedCandidate : cand));
-      toast({ title: "Candidate Updated", description: "Candidate details have been saved." });
+      try {
+        await updateCandidate(updatedCandidate);
+        setCandidates(candidates.map(cand => cand.id === editingCandidate.id ? updatedCandidate : cand));
+        toast({ title: "Candidate Updated", description: "Candidate details have been saved." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to update candidate.", variant: "destructive" });
+      }
     } else {
-      const newCandidate: Candidate = {
-        id: `c${candidates.length + 1}`,
+      const newCandidateData = {
         ...candidateData,
-        avatar: "/avatars/new.png",
+        avatar: `https://placehold.co/40x40.png?text=${candidateData.name.charAt(0)}`,
       };
-      setCandidates([...candidates, newCandidate]);
-      toast({ title: "Candidate Added", description: "A new candidate has been added." });
+      try {
+        const newCandidate = await addCandidate(newCandidateData);
+        setCandidates([...candidates, newCandidate]);
+        toast({ title: "Candidate Added", description: "A new candidate has been added." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to add candidate.", variant: "destructive" });
+      }
     }
     
     setIsDialogOpen(false);
