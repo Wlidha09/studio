@@ -1,5 +1,3 @@
-# Firebase Studio
+# HResource
 
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+This is a Next.js project for HResource, a Human Resources Management System.
