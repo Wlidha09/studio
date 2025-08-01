@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
   Briefcase,
