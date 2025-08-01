@@ -1,7 +1,8 @@
 import CandidateTable from "@/components/dashboard/candidate-table";
-import { candidates } from "@/lib/data";
+import { getCandidates } from "@/lib/firestore";
 
-export default function CandidatesPage() {
+export default async function CandidatesPage() {
+  const candidates = await getCandidates();
   return (
     <div>
       <CandidateTable initialCandidates={candidates} />

@@ -22,7 +22,8 @@ import {
   Wand2,
   Home,
   LogOut,
-  UserCircle
+  UserCircle,
+  Database,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -78,6 +79,12 @@ const menuItems = [
     label: "AI Job Generator",
     roles: ["Owner", "RH", "Manager", "Dev"],
   },
+  {
+    href: "/dashboard/seed-database",
+    icon: Database,
+    label: "Seed Database",
+    roles: ["Dev", "Owner"],
+  }
 ];
 
 export default function DashboardSidebar() {

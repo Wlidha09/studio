@@ -1,8 +1,13 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Users, UserCircle, Building2, CalendarClock } from "lucide-react";
-import { employees, candidates, departments, leaveRequests } from "@/lib/data";
+import { getEmployees, getCandidates, getDepartments, getLeaveRequests } from "@/lib/firestore";
 
-export default function DashboardOverview() {
+export default async function DashboardOverview() {
+  const employees = await getEmployees();
+  const candidates = await getCandidates();
+  const departments = await getDepartments();
+  const leaveRequests = await getLeaveRequests();
+
   const totalEmployees = employees.length;
   const totalCandidates = candidates.length;
   const totalDepartments = departments.length;

@@ -1,7 +1,9 @@
 import LeaveRequestsTable from "@/components/dashboard/leave-requests-table";
-import { leaveRequests, employees } from "@/lib/data";
+import { getLeaveRequests, getEmployees } from "@/lib/firestore";
 
-export default function LeavesPage() {
+export default async function LeavesPage() {
+  const leaveRequests = await getLeaveRequests();
+  const employees = await getEmployees();
   return (
     <div>
       <LeaveRequestsTable initialLeaveRequests={leaveRequests} employees={employees} />

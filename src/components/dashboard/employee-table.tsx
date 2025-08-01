@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { departments } from "@/lib/data";
+import { departments } from "@/lib/data"; // Keep for dropdown
 
 const roleColors: Record<UserRole, string> = {
   Owner: "bg-amber-500",
@@ -64,8 +64,9 @@ export default function EmployeeTable({ initialEmployees }: EmployeeTableProps) 
   };
   
   const handleDelete = (id: string) => {
+    // TODO: Implement actual delete from Firestore
     setEmployees(employees.filter((e) => e.id !== id));
-    toast({ title: "Employee Deleted", description: "The employee has been removed." });
+    toast({ title: "Employee Deleted", description: "The employee has been removed (UI only)." });
   };
   
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
@@ -74,17 +75,19 @@ export default function EmployeeTable({ initialEmployees }: EmployeeTableProps) 
     const employeeData = Object.fromEntries(formData.entries()) as Omit<Employee, 'id' | 'avatar'>;
     
     if (editingEmployee) {
+      // TODO: Implement actual update in Firestore
       const updatedEmployee = { ...editingEmployee, ...employeeData };
       setEmployees(employees.map(emp => emp.id === editingEmployee.id ? updatedEmployee : emp));
-      toast({ title: "Employee Updated", description: "Employee details have been saved." });
+      toast({ title: "Employee Updated", description: "Employee details have been saved (UI only)." });
     } else {
+      // TODO: Implement actual add to Firestore
       const newEmployee: Employee = {
         id: (employees.length + 1).toString(),
         ...employeeData,
         avatar: "/avatars/new.png",
       };
       setEmployees([...employees, newEmployee]);
-      toast({ title: "Employee Added", description: "A new employee has been added." });
+      toast({ title: "Employee Added", description: "A new employee has been added (UI only)." });
     }
     
     setIsDialogOpen(false);
