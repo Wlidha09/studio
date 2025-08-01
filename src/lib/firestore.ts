@@ -1,9 +1,20 @@
+
 "use server";
 
 import { db } from './firebase';
-import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
 import type { Employee, Candidate, Department, LeaveRequest } from './types';
+
+// Helper function to convert Firestore Timestamps to strings
+const convertTimestamps = (obj: any) => {
+  for (const key in obj) {
+    if (obj[key] instanceof Timestamp) {
+      obj[key] = obj[key].toDate().toISOString();
+    }
+  }
+  return obj;
+};
 
 // Seed Database
 export async function seedDatabase() {
@@ -13,25 +24,25 @@ export async function seedDatabase() {
     const employeesCollection = collection(db, 'employees');
     initialEmployees.forEach((employee) => {
       const docRef = doc(employeesCollection, employee.id);
-      batch.set(docRef, employee);
+      batch.set(docRef, {...employee, createdAt: serverTimestamp()});
     });
 
     const candidatesCollection = collection(db, 'candidates');
     initialCandidates.forEach((candidate) => {
       const docRef = doc(candidatesCollection, candidate.id);
-      batch.set(docRef, candidate);
+      batch.set(docRef, {...candidate, createdAt: serverTimestamp()});
     });
 
     const departmentsCollection = collection(db, 'departments');
     initialDepartments.forEach((department) => {
       const docRef = doc(departmentsCollection, department.id);
-      batch.set(docRef, department);
+      batch.set(docRef, {...department, createdAt: serverTimestamp()});
     });
 
     const leaveRequestsCollection = collection(db, 'leaveRequests');
     initialLeaveRequests.forEach((leaveRequest) => {
       const docRef = doc(leaveRequestsCollection, leaveRequest.id);
-      batch.set(docRef, leaveRequest);
+      batch.set(docRef, {...leaveRequest, createdAt: serverTimestamp()});
     });
 
     await batch.commit();
@@ -45,22 +56,22 @@ export async function seedDatabase() {
 // Get Collections
 export async function getEmployees(): Promise<Employee[]> {
   const querySnapshot = await getDocs(collection(db, 'employees'));
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+  return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Employee);
 }
 
 export async function getCandidates(): Promise<Candidate[]> {
     const querySnapshot = await getDocs(collection(db, 'candidates'));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Candidate));
+    return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Candidate);
 }
 
 export async function getDepartments(): Promise<Department[]> {
     const querySnapshot = await getDocs(collection(db, 'departments'));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department));
+    return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Department);
 }
 
 export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     const querySnapshot = await getDocs(collection(db, 'leaveRequests'));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LeaveRequest));
+    return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as LeaveRequest);
 }
 
 
