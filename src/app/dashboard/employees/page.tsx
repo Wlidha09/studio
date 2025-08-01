@@ -1,11 +1,12 @@
 import EmployeeTable from "@/components/dashboard/employee-table";
-import { getEmployees } from "@/lib/firestore";
+import { getDepartments, getEmployees } from "@/lib/firestore";
 
 export default async function EmployeesPage() {
   const employees = await getEmployees();
+  const departments = await getDepartments();
   return (
     <div>
-      <EmployeeTable initialEmployees={employees} />
+      <EmployeeTable initialEmployees={employees} departments={departments} />
     </div>
   );
 }

@@ -19,7 +19,7 @@ import {
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
-import type { Employee, UserRole } from "@/lib/types";
+import type { Department, Employee, UserRole } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { departments } from "@/lib/data"; // Keep for dropdown
 import { addEmployee, deleteEmployee, updateEmployee } from "@/lib/firestore";
 
 const roleColors: Record<UserRole, string> = {
@@ -51,9 +50,10 @@ const roleColors: Record<UserRole, string> = {
 
 interface EmployeeTableProps {
   initialEmployees: Employee[];
+  departments: Department[];
 }
 
-export default function EmployeeTable({ initialEmployees }: EmployeeTableProps) {
+export default function EmployeeTable({ initialEmployees, departments }: EmployeeTableProps) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
