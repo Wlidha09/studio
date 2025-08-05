@@ -3,61 +3,30 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { updateEmployee } from "@/lib/firestore";
 import type { Employee } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
-  const { employee, setEmployee } = useAuth();
+  const { employee } = useAuth();
   const [formData, setFormData] = useState<Partial<Employee>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (employee) {
       setFormData({
         name: employee.name,
         birthDate: employee.birthDate,
+        email: employee.email,
+        department: employee.department,
+        role: employee.role,
+        hireDate: employee.hireDate,
       });
     }
   }, [employee]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!employee) return;
-
-    setIsLoading(true);
-    try {
-      const updatedData: Employee = {
-        ...employee,
-        ...formData,
-      };
-      await updateEmployee(updatedData);
-      setEmployee(updatedData);
-      toast({ title: "Success", description: "Your profile has been updated." });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update your profile.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!employee) {
     return (
@@ -73,11 +42,10 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle className="font-headline text-2xl">My Profile</CardTitle>
           <CardDescription>
-            View and update your personal information.
+            View your personal and company information.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-8">
+        <CardContent className="space-y-8">
             <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
                     <AvatarImage src={`https://placehold.co/96x96.png?text=${employee.name.charAt(0)}`} alt={employee.name} />
@@ -97,22 +65,24 @@ export default function ProfilePage() {
                     <div className="space-y-2">
                         <Label htmlFor="name">Full Name</Label>
                         <Input
-                        id="name"
-                        name="name"
-                        value={formData.name || ""}
-                        onChange={handleChange}
-                        required
+                            id="name"
+                            name="name"
+                            value={formData.name || ""}
+                            readOnly
+                            disabled
+                            className="bg-muted"
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="birthDate">Birth Date</Label>
                         <Input
-                        id="birthDate"
-                        name="birthDate"
-                        type="date"
-                        value={formData.birthDate || ""}
-                        onChange={handleChange}
-                        required
+                            id="birthDate"
+                            name="birthDate"
+                            type="date"
+                            value={formData.birthDate || ""}
+                            readOnly
+                            disabled
+                            className="bg-muted"
                         />
                     </div>
                 </div>
@@ -137,20 +107,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </CardFooter>
-        </form>
+        </CardContent>
       </Card>
     </div>
   );
