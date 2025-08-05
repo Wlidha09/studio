@@ -4,7 +4,7 @@
 import { db } from './firebase';
 import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
-import type { Employee, Candidate, Department, LeaveRequest } from './types';
+import type { Employee, Candidate, Department, LeaveRequest, Holiday } from './types';
 
 // Helper function to convert Firestore Timestamps to strings
 const convertDocTimestamps = (doc: any) => {
@@ -159,4 +159,28 @@ export async function addLeaveRequest(leaveRequest: Omit<LeaveRequest, 'id'>): P
 export async function updateLeaveRequestStatus(id: string, status: LeaveRequest['status']): Promise<void> {
     const docRef = doc(db, 'leaveRequests', id);
     await updateDoc(docRef, { status });
+}
+
+// Holiday Functions
+export async function getHolidays(year: number): Promise<Holiday[]> {
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year, 11, 31);
+    const q = query(
+        collection(db, 'holidays'),
+        where('date', '>=', startDate.toISOString().split('T')[0]),
+        where('date', '<=', endDate.toISOString().split('T')[0])
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as Holiday);
+}
+
+export async function addHoliday(holiday: Omit<Holiday, 'id'>): Promise<Holiday> {
+    const docRef = await addDoc(collection(db, 'holidays'), { ...holiday, createdAt: serverTimestamp() });
+    const newDoc = await getDoc(docRef);
+    return convertDocTimestamps(newDoc) as Holiday;
+}
+
+export async function deleteHoliday(id: string): Promise<void> {
+    const docRef = doc(db, 'holidays', id);
+    await deleteDoc(docRef);
 }

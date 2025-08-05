@@ -35,3 +35,9 @@ export type LeaveRequest = {
   endDate: string;
   status: "Pending" | "Approved" | "Rejected";
 };
+
+export type Holiday = {
+    id: string;
+    name: string;
+    date: string; // YYYY-MM-DD
+};
