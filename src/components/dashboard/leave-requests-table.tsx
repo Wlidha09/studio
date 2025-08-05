@@ -75,7 +75,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
         }
         setEmployeeDepartments(departments);
     }
-    if (employee?.role === "Manager") {
+    if (employee?.role === "Manager" || employee?.role === "Owner" || employee?.role === "RH") {
       fetchDepartments();
     }
   }, [initialLeaveRequests, employee?.role]);
@@ -125,19 +125,22 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
   const isEmployee = role === "Employee";
   const isManager = role === "Manager";
   const isRh = role === "RH";
-  const isOwner = role === "Owner";
+  const isOwner = role === "Owner" || role === "Dev";
  
   const filteredRequests = leaveRequests.filter(req => {
     if (isEmployee) return req.employeeId === employee?.id;
-    if (isManager) return employeeDepartments[req.employeeId] === employee?.department;
+    if (isManager && employee) {
+      const managerDepartment = employee.department;
+      return employeeDepartments[req.employeeId] === managerDepartment;
+    }
     if (isRh || isOwner) return true;
     return false;
-  })
+  }).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
 
   return (
     <>
-      {role && (isEmployee || isManager || isRh || isOwner) && (
+      {role && (
         <div className="flex justify-end mb-4">
           <Button onClick={() => setIsDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
@@ -197,19 +200,19 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
                                 Approve
                             </DropdownMenuItem>
                         )}
-                         {isOwner && request.status === "Pending" && (
+                         {(isOwner) && request.status === "Pending" && (
                             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                                 Approve (as Manager)
                             </DropdownMenuItem>
                         )}
-                        {isOwner && request.status === "ApprovedByManager" && (
+                        {(isOwner) && request.status === "ApprovedByManager" && (
                              <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                                 Approve (as RH)
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")}>
+                        <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} disabled={request.status === 'Rejected' || request.status === 'Approved'}>
                           <XCircle className="mr-2 h-4 w-4 text-red-500" />
                           Reject
                         </DropdownMenuItem>
