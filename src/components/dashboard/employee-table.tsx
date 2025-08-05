@@ -183,10 +183,6 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                 <Label htmlFor="hireDate" className="text-right">Hire Date</Label>
                 <Input id="hireDate" name="hireDate" type="date" defaultValue={editingEmployee?.hireDate} className="col-span-3" required/>
               </div>
-               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="birthDate" className="text-right">Birth Date</Label>
-                <Input id="birthDate" name="birthDate" type="date" defaultValue={editingEmployee?.birthDate} className="col-span-3" required/>
-              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="department" className="text-right">Department</Label>
                  <Select name="department" defaultValue={editingEmployee?.department}>
@@ -212,6 +208,10 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                         <SelectItem value="Dev">Dev</SelectItem>
                     </SelectContent>
                  </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="birthDate" className="text-right">Birth Date</Label>
+                <Input id="birthDate" name="birthDate" type="date" defaultValue={editingEmployee?.birthDate} className="col-span-3" required/>
               </div>
             </div>
             <DialogFooter>
