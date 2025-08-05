@@ -135,7 +135,7 @@ export default function LoginPage() {
                         </div>
                         <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button" disabled={isGoogleLoading}>
                             {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> :  <GoogleIcon className="mr-2 h-5 w-5" />}
-                            Sign in with Google
+                            Continue with Google
                         </Button>
                     </CardFooter>
                 </form>
