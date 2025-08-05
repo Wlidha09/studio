@@ -41,8 +41,8 @@ const prompt = ai.definePrompt({
   input: { schema: ImportHolidaysInputSchema },
   output: { schema: ImportHolidaysOutputSchema },
   prompt: `You are an expert on global holidays. Provide a list of all official public holidays in Tunisia for the year {{{year}}}.
-    Please provide the exact date for each holiday. If a holiday's date varies, provide the correct date for the specified year.
-    For religious holidays like Eid al-Fitr and Eid al-Adha, please provide the most commonly accepted date for {{{year}}}.
+    Please provide the exact date for each holiday. If a holiday spans multiple days (e.g., Eid al-Fitr, Eid al-Adha), please create a separate entry for each day. For example, if Eid al-Fitr is 2 days, you should return "Eid al-Fitr (Day 1)" and "Eid al-Fitr (Day 2)" with their respective dates.
+    For religious holidays, please provide the most commonly accepted dates for {{{year}}}.
     `,
 });
 
