@@ -94,7 +94,10 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!employee) return;
+    if (!employee) {
+        toast({ title: "Not Authenticated", description: "You must be logged in to submit a request.", variant: "destructive" });
+        return;
+    };
     
     const formData = new FormData(e.currentTarget);
     const leaveData = {
@@ -131,13 +134,11 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
 
   return (
     <>
-      {role && (
-        <div className="flex justify-end mb-4">
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-end mb-4">
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
+        </Button>
+      </div>
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
