@@ -40,9 +40,6 @@ import {
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { addEmployee, deleteEmployee, updateEmployee } from "@/lib/firestore";
-import { useRole } from "@/contexts/role-context";
-import { useAtomValue } from "jotai";
-import { permissionsAtom } from "@/lib/permissions";
 
 const roleColors: Record<UserRole, string> = {
   Owner: "bg-amber-500",
@@ -62,11 +59,6 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
-  const { role } = useRole();
-  const permissions = useAtomValue(permissionsAtom);
-  const canCreate = permissions[role]?.employees?.create;
-  const canEdit = permissions[role]?.employees?.edit;
-  const canDelete = permissions[role]?.employees?.delete;
 
   const handleEdit = (employee: Employee) => {
     setEditingEmployee(employee);
@@ -118,11 +110,9 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   return (
     <>
       <div className="flex justify-end mb-4">
-        {canCreate && (
-            <Button onClick={() => { setEditingEmployee(null); setIsDialogOpen(true); }}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
-            </Button>
-        )}
+        <Button onClick={() => { setEditingEmployee(null); setIsDialogOpen(true); }}>
+        <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
+        </Button>
       </div>
       <div className="border rounded-lg">
         <Table>
@@ -131,7 +121,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
               <TableHead>Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Role</TableHead>
-              {(canEdit || canDelete) && <TableHead className="text-right">Actions</TableHead>}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -155,22 +145,20 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                 <TableCell>
                   <Badge variant="secondary" className={`${roleColors[employee.role]} text-white`}>{employee.role}</Badge>
                 </TableCell>
-                {(canEdit || canDelete) && (
-                    <TableCell className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        {canEdit && <DropdownMenuItem onClick={() => handleEdit(employee)}>Edit</DropdownMenuItem>}
-                        {canDelete && <DropdownMenuItem onClick={() => handleDelete(employee.id)} className="text-destructive">Delete</DropdownMenuItem>}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    </TableCell>
-                )}
+                <TableCell className="text-right">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(employee)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDelete(employee.id)} className="text-destructive">Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

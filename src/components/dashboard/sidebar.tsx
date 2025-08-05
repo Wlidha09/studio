@@ -41,8 +41,6 @@ import { Label } from "../ui/label";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
-import { useAtomValue } from "jotai";
-import { permissionsAtom } from "@/lib/permissions";
 import type { PageKey } from "@/lib/permissions";
 
 const menuItems = [
@@ -111,9 +109,7 @@ const menuItems = [
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const { role, setRole } = useRole();
-  const { employee } = useAuth();
   const router = useRouter();
-  const permissions = useAtomValue(permissionsAtom);
 
   const handleLogout = async () => {
     await signOut();
@@ -123,10 +119,6 @@ export default function DashboardSidebar() {
   const isNavItemActive = (href: string) => {
     return pathname === href;
   };
-
-  const visibleMenuItems = menuItems.filter(item => {
-    return permissions[role]?.[item.pageKey]?.view;
-  });
 
   return (
     <Sidebar>
@@ -140,7 +132,7 @@ export default function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent className="flex-grow">
         <SidebarMenu>
-          {visibleMenuItems.map((item) => (
+          {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton
