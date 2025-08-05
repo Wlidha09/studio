@@ -122,20 +122,11 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
   };
   
   const role = employee?.role;
-  const isEmployee = role === "Employee";
   const isManager = role === "Manager";
   const isRh = role === "RH";
   const isOwner = role === "Owner" || role === "Dev";
  
-  const filteredRequests = leaveRequests.filter(req => {
-    if (isEmployee) return req.employeeId === employee?.id;
-    if (isManager && employee) {
-      const managerDepartment = employee.department;
-      return employeeDepartments[req.employeeId] === managerDepartment;
-    }
-    if (isRh || isOwner) return true;
-    return false;
-  }).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+  const filteredRequests = leaveRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
 
   return (
@@ -151,7 +142,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
         <Table>
           <TableHeader>
             <TableRow>
-              {!isEmployee && <TableHead>Employee</TableHead>}
+              <TableHead>Employee</TableHead>
               <TableHead>Leave Type</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Status</TableHead>
@@ -161,7 +152,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
           <TableBody>
             {filteredRequests.map((request) => (
               <TableRow key={request.id}>
-                {!isEmployee && <TableCell>{request.employeeName}</TableCell>}
+                <TableCell>{request.employeeName}</TableCell>
                 <TableCell>{request.leaveType}</TableCell>
                 <TableCell>{request.startDate} to {request.endDate}</TableCell>
                 <TableCell>
