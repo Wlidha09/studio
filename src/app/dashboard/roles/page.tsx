@@ -22,7 +22,8 @@ export default function RolesPage() {
             if (!newPermissions[role]) newPermissions[role] = {} as any;
             if (!newPermissions[role][page]) newPermissions[role][page] = { view: false };
 
-            const updatedPagePermissions = { ...(newPermissions[role][page] || {}), [action]: checked };
+            const currentPerms = newPermissions[role]?.[page] ?? {};
+            const updatedPagePermissions = { ...currentPerms, [action]: checked };
 
             // If view is unchecked, all other permissions for that page should be unchecked
             if (action === 'view' && !checked) {
@@ -32,6 +33,12 @@ export default function RolesPage() {
                     }
                 });
             }
+            
+            // If another action is checked, view should be checked
+            if(action !== 'view' && checked) {
+                updatedPagePermissions.view = true;
+            }
+
 
             return {
                 ...prev,
@@ -77,6 +84,7 @@ export default function RolesPage() {
                                     {Object.keys(pages).map(pageKey => {
                                         const pageKeyTyped = pageKey as PageKey;
                                         const pagePerms = permissions[role]?.[pageKeyTyped] ?? {};
+                                        
                                         const hasAction = (action: keyof PagePermissions) => {
                                             const allPerms = permissions['Dev']?.[pageKeyTyped] ?? {};
                                             return action in allPerms;
