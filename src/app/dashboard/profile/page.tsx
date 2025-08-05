@@ -1,32 +1,16 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Employee } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
   const { employee } = useAuth();
-  const [formData, setFormData] = useState<Partial<Employee>>({});
-
-  useEffect(() => {
-    if (employee) {
-      setFormData({
-        name: employee.name,
-        birthDate: employee.birthDate,
-        email: employee.email,
-        department: employee.department,
-        role: employee.role,
-        hireDate: employee.hireDate,
-      });
-    }
-  }, [employee]);
 
   if (!employee) {
     return (
@@ -67,7 +51,7 @@ export default function ProfilePage() {
                         <Input
                             id="name"
                             name="name"
-                            value={formData.name || ""}
+                            value={employee.name || ""}
                             readOnly
                             disabled
                             className="bg-muted"
@@ -79,7 +63,7 @@ export default function ProfilePage() {
                             id="birthDate"
                             name="birthDate"
                             type="date"
-                            value={formData.birthDate || ""}
+                            value={employee.birthDate || ""}
                             readOnly
                             disabled
                             className="bg-muted"
