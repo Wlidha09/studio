@@ -14,20 +14,22 @@ export default async function DashboardOverview() {
   const totalDepartments = departments.length;
   const pendingLeaves = leaveRequests.filter(lr => lr.status === 'Pending').length;
 
-  const currentMonth = new Date().getMonth() + 1;
-  const totalAccruedLeave = currentMonth * 1.75;
+  const totalAnnualLeave = 5;
+  const currentYear = new Date().getFullYear();
 
   const approvedLeaveDays = leaveRequests
-    .filter(lr => lr.status === 'Approved')
+    .filter(lr => {
+        const leaveYear = parseISO(lr.startDate).getFullYear();
+        return lr.status === 'Approved' && leaveYear === currentYear;
+    })
     .reduce((total, lr) => {
-      // Assuming YYYY-MM-DD format from the database
       const startDate = parseISO(lr.startDate);
       const endDate = parseISO(lr.endDate);
       const days = differenceInDays(endDate, startDate) + 1;
       return total + days;
     }, 0);
 
-  const leaveDaysLeft = totalAccruedLeave - approvedLeaveDays;
+  const leaveDaysLeft = totalAnnualLeave - approvedLeaveDays;
 
 
   return (
@@ -69,7 +71,7 @@ export default async function DashboardOverview() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{leaveDaysLeft.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">Accrued this year</p>
+          <p className="text-xs text-muted-foreground">Per employee this year</p>
         </CardContent>
       </Card>
     </div>
