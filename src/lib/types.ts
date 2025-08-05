@@ -7,6 +7,8 @@ export type Employee = {
   role: UserRole;
   department: string;
   avatar: string;
+  hireDate: string;
+  birthDate: string;
 };
 
 export type Candidate = {
