@@ -26,6 +26,7 @@ import {
   UserCircle,
   Database,
   ClipboardCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -40,53 +41,70 @@ import { Label } from "../ui/label";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
+import { pagePermissions } from "@/lib/permissions";
+import type { PageKey } from "@/lib/permissions";
 
 const menuItems = [
   {
     href: "/dashboard",
     icon: Home,
     label: "Overview",
+    pageKey: "overview" as PageKey,
   },
   {
     href: "/dashboard/employees",
     icon: Users,
     label: "Employees",
+    pageKey: "employees" as PageKey,
   },
   {
     href: "/dashboard/candidates",
     icon: UserCircle,
     label: "Candidates",
+    pageKey: "candidates" as PageKey,
   },
   {
     href: "/dashboard/departments",
     icon: Building2,
     label: "Departments",
+    pageKey: "departments" as PageKey,
   },
   {
     href: "/dashboard/leaves",
     icon: CalendarDays,
     label: "Leave Requests",
+    pageKey: "leaves" as PageKey,
   },
   {
     href: "/dashboard/attendance",
     icon: Clock,
     label: "Attendance",
+    pageKey: "attendance" as PageKey,
   },
   {
     href: "/dashboard/tickets",
     icon: ClipboardCheck,
     label: "Tickets",
+    pageKey: "tickets" as PageKey,
   },
   {
     href: "/dashboard/job-description-generator",
     icon: Wand2,
     label: "AI Job Generator",
+    pageKey: "job-description-generator" as PageKey,
+  },
+  {
+    href: "/dashboard/roles",
+    icon: ShieldAlert,
+    label: "Roles",
+    pageKey: "roles" as PageKey,
   },
   {
     href: "/dashboard/seed-database",
     icon: Database,
     label: "Seed Database",
-  }
+    pageKey: "seed-database" as PageKey,
+  },
 ];
 
 export default function DashboardSidebar() {
@@ -104,6 +122,10 @@ export default function DashboardSidebar() {
     return pathname === href;
   };
 
+  const visibleMenuItems = menuItems.filter(item => {
+    return pagePermissions[role]?.[item.pageKey];
+  });
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -116,7 +138,7 @@ export default function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent className="flex-grow">
         <SidebarMenu>
-          {menuItems.map((item) => (
+          {visibleMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton
