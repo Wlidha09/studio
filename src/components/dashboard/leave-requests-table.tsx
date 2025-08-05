@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, PlusCircle, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "../ui/badge";
-import type { LeaveRequest, Employee } from "@/lib/types";
+import type { LeaveRequest } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import {
   Dialog,
@@ -39,7 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { addLeaveRequest, updateLeaveRequestStatus, getEmployeeDepartment } from "@/lib/firestore";
+import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
 
 type Status = "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 
@@ -52,33 +52,13 @@ const statusColors: Record<Status, string> = {
 
 interface LeaveRequestsTableProps {
   initialLeaveRequests: LeaveRequest[];
-  employees: Employee[];
 }
 
-export default function LeaveRequestsTable({ initialLeaveRequests, employees }: LeaveRequestsTableProps) {
+export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveRequestsTableProps) {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeaveRequests);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { employee } = useAuth();
   const { toast } = useToast();
-  const [employeeDepartments, setEmployeeDepartments] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    async function fetchDepartments() {
-        const departments: Record<string, string> = {};
-        for (const req of initialLeaveRequests) {
-            if (!departments[req.employeeId]) {
-                const dep = await getEmployeeDepartment(req.employeeId);
-                if (dep) {
-                    departments[req.employeeId] = dep;
-                }
-            }
-        }
-        setEmployeeDepartments(departments);
-    }
-    if (employee?.role === "Manager" || employee?.role === "Owner" || employee?.role === "RH") {
-      fetchDepartments();
-    }
-  }, [initialLeaveRequests, employee?.role]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -124,12 +104,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
     setIsDialogOpen(false);
   };
   
-  const role = employee?.role;
-  const isManager = role === "Manager";
-  const isRh = role === "RH";
-  const isOwner = role === "Owner" || role === "Dev";
- 
-  const filteredRequests = leaveRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+  const sortedRequests = leaveRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
 
   return (
@@ -147,11 +122,11 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
               <TableHead>Leave Type</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Status</TableHead>
-              {(isManager || isRh || isOwner) && <TableHead className="text-right">Actions</TableHead>}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredRequests.map((request) => (
+            {sortedRequests.map((request) => (
               <TableRow key={request.id}>
                 <TableCell>{request.employeeName}</TableCell>
                 <TableCell>{request.leaveType}</TableCell>
@@ -161,16 +136,13 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
                     {request.status}
                   </Badge>
                 </TableCell>
-                {(isManager || isRh || isOwner) && (
-                  <TableCell className="text-right">
+                <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           className="h-8 w-8 p-0"
                           disabled={
-                            (isManager && request.status !== "Pending") ||
-                            (isRh && request.status !== "ApprovedByManager") ||
                             request.status === "Approved" ||
                             request.status === "Rejected"
                           }
@@ -180,28 +152,16 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {isManager && request.status === "Pending" && (
+                        {request.status === "Pending" && (
                             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve
+                                Approve (Manager)
                             </DropdownMenuItem>
                         )}
-                        {isRh && request.status === "ApprovedByManager" && (
+                        {request.status === "ApprovedByManager" && (
                              <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve
-                            </DropdownMenuItem>
-                        )}
-                         {(isOwner) && request.status === "Pending" && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve (as Manager)
-                            </DropdownMenuItem>
-                        )}
-                        {(isOwner) && request.status === "ApprovedByManager" && (
-                             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve (as RH)
+                                Approve (RH)
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} disabled={request.status === 'Rejected' || request.status === 'Approved'}>
@@ -211,7 +171,6 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                )}
               </TableRow>
             ))}
           </TableBody>

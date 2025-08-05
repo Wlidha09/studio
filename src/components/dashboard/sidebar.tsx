@@ -46,55 +46,46 @@ const menuItems = [
     href: "/dashboard",
     icon: Home,
     label: "Overview",
-    roles: ["Owner", "RH", "Manager", "Employee", "Dev"],
   },
   {
     href: "/dashboard/employees",
     icon: Users,
     label: "Employees",
-    roles: ["Owner", "RH", "Manager", "Dev"],
   },
   {
     href: "/dashboard/candidates",
     icon: UserCircle,
     label: "Candidates",
-    roles: ["Owner", "RH", "Manager", "Dev"],
   },
   {
     href: "/dashboard/departments",
     icon: Building2,
     label: "Departments",
-    roles: ["Owner", "RH", "Dev"],
   },
   {
     href: "/dashboard/leaves",
     icon: CalendarDays,
     label: "Leave Requests",
-    roles: ["Owner", "RH", "Manager", "Employee"],
   },
   {
     href: "/dashboard/attendance",
     icon: Clock,
     label: "Attendance",
-    roles: ["Owner", "RH", "Dev"],
   },
   {
     href: "/dashboard/tickets",
     icon: ClipboardCheck,
     label: "Tickets",
-    roles: ["Owner", "RH", "Manager", "Dev"],
   },
   {
     href: "/dashboard/job-description-generator",
     icon: Wand2,
     label: "AI Job Generator",
-    roles: ["Owner", "RH", "Manager", "Dev"],
   },
   {
     href: "/dashboard/seed-database",
     icon: Database,
     label: "Seed Database",
-    roles: ["Dev", "Owner"],
   }
 ];
 
@@ -113,10 +104,6 @@ export default function DashboardSidebar() {
     return pathname === href;
   };
 
-  const currentRole = employee?.role || role;
-
-  const availableMenuItems = menuItems.filter(item => (item.roles as UserRole[]).includes(currentRole));
-
   return (
     <Sidebar>
       <SidebarHeader>
@@ -129,7 +116,7 @@ export default function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent className="flex-grow">
         <SidebarMenu>
-          {availableMenuItems.map((item) => (
+          {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton

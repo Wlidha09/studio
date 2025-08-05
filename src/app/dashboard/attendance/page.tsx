@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw, Edit, ShieldAlert } from "lucide-react";
+import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Holiday, UserRole } from "@/lib/types";
+import type { Holiday } from "@/lib/types";
 import { getHolidays, addHoliday, deleteHoliday, updateHoliday, updateHolidayPaidStatus } from "@/lib/firestore";
 import {
   Dialog,
@@ -22,9 +22,6 @@ import {
 import { format, parseISO } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { importHolidays } from "@/ai/flows/import-holidays";
-import { useAuth } from "@/contexts/auth-context";
-
-const ALLOWED_ROLES: UserRole[] = ["Dev", "Owner", "RH"];
 
 export default function AttendancePage() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -34,8 +31,6 @@ export default function AttendancePage() {
   const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
-  const { employee } = useAuth();
-
 
   useEffect(() => {
     async function fetchHolidays(year: number) {
@@ -56,16 +51,12 @@ export default function AttendancePage() {
       }
     }
     
-    if (employee && ALLOWED_ROLES.includes(employee.role)) {
-        const yearNow = new Date().getFullYear();
-        if(yearNow !== currentYear) {
-        setCurrentYear(yearNow);
-        }
-        fetchHolidays(currentYear);
-    } else {
-        setIsLoading(false);
+    const yearNow = new Date().getFullYear();
+    if(yearNow !== currentYear) {
+      setCurrentYear(yearNow);
     }
-  }, [currentYear, toast, employee]);
+    fetchHolidays(currentYear);
+  }, [currentYear, toast]);
 
   const handleEdit = (holiday: Holiday) => {
     setEditingHoliday(holiday);
@@ -159,20 +150,6 @@ export default function AttendancePage() {
         </div>
     );
   }
-
-  if (!employee || !ALLOWED_ROLES.includes(employee.role)) {
-    return (
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle className="text-destructive flex items-center gap-2"><ShieldAlert /> Access Denied</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>You do not have the necessary permissions to view this page. Please contact an administrator if you believe this is an error.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
 
   return (
     <>
