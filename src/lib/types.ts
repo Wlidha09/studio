@@ -34,7 +34,7 @@ export type LeaveRequest = {
   leaveType: "Vacation" | "Sick Leave" | "Personal";
   startDate: string;
   endDate: string;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 };
 
 export type Holiday = {

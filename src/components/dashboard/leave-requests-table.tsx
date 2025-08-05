@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -39,12 +39,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
+import { addLeaveRequest, updateLeaveRequestStatus, getEmployeeDepartment } from "@/lib/firestore";
 
-type Status = "Pending" | "Approved" | "Rejected";
+type Status = "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 
 const statusColors: Record<Status, string> = {
   Pending: "bg-yellow-200 text-yellow-800",
+  ApprovedByManager: "bg-blue-200 text-blue-800",
   Approved: "bg-green-200 text-green-800",
   Rejected: "bg-red-200 text-red-800",
 };
@@ -59,6 +60,25 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { employee } = useAuth();
   const { toast } = useToast();
+  const [employeeDepartments, setEmployeeDepartments] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    async function fetchDepartments() {
+        const departments: Record<string, string> = {};
+        for (const req of initialLeaveRequests) {
+            if (!departments[req.employeeId]) {
+                const dep = await getEmployeeDepartment(req.employeeId);
+                if (dep) {
+                    departments[req.employeeId] = dep;
+                }
+            }
+        }
+        setEmployeeDepartments(departments);
+    }
+    if (employee?.role === "Manager") {
+      fetchDepartments();
+    }
+  }, [initialLeaveRequests, employee?.role]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -66,7 +86,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
       setLeaveRequests(
         leaveRequests.map((req) => (req.id === id ? { ...req, status } : req))
       );
-      toast({ title: `Leave Request ${status}`, description: `The request has been ${status.toLowerCase()}.` });
+      toast({ title: `Leave Request Updated`, description: `The request has been updated to ${status}.` });
     } catch(error) {
        toast({ title: "Error", description: "Failed to update leave request.", variant: "destructive" });
     }
@@ -102,17 +122,22 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
   };
   
   const role = employee?.role;
-  const canManage = role === "Manager" || role === "RH" || role === "Owner";
   const isEmployee = role === "Employee";
+  const isManager = role === "Manager";
+  const isRh = role === "RH";
+  const isOwner = role === "Owner";
  
-  const filteredRequests = isEmployee 
-    ? leaveRequests.filter(req => req.employeeId === employee?.id)
-    : leaveRequests;
+  const filteredRequests = leaveRequests.filter(req => {
+    if (isEmployee) return req.employeeId === employee?.id;
+    if (isManager) return employeeDepartments[req.employeeId] === employee?.department;
+    if (isRh || isOwner) return true;
+    return false;
+  })
 
 
   return (
     <>
-      {role && (isEmployee || canManage) && (
+      {role && (isEmployee || isManager || isRh || isOwner) && (
         <div className="flex justify-end mb-4">
           <Button onClick={() => setIsDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
@@ -127,7 +152,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
               <TableHead>Leave Type</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Status</TableHead>
-              {canManage && <TableHead className="text-right">Actions</TableHead>}
+              {(isManager || isRh || isOwner) && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -141,24 +166,49 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
                     {request.status}
                   </Badge>
                 </TableCell>
-                {canManage && (
+                {(isManager || isRh || isOwner) && (
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           className="h-8 w-8 p-0"
-                          disabled={request.status !== "Pending"}
+                          disabled={
+                            (isManager && request.status !== "Pending") ||
+                            (isRh && request.status !== "ApprovedByManager") ||
+                            request.status === "Approved" ||
+                            request.status === "Rejected"
+                          }
                         >
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
-                          <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                          Approve
-                        </DropdownMenuItem>
+                        {isManager && request.status === "Pending" && (
+                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                Approve
+                            </DropdownMenuItem>
+                        )}
+                        {isRh && request.status === "ApprovedByManager" && (
+                             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                Approve
+                            </DropdownMenuItem>
+                        )}
+                         {isOwner && request.status === "Pending" && (
+                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                Approve (as Manager)
+                            </DropdownMenuItem>
+                        )}
+                        {isOwner && request.status === "ApprovedByManager" && (
+                             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                Approve (as RH)
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")}>
                           <XCircle className="mr-2 h-4 w-4 text-red-500" />
                           Reject

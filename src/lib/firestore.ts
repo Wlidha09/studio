@@ -113,6 +113,11 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
     return null;
 }
 
+export async function getEmployeeDepartment(employeeId: string): Promise<string | null> {
+    const employee = await getEmployeeById(employeeId);
+    return employee ? employee.department : null;
+}
+
 
 // Candidate Functions
 export async function addCandidate(candidate: Omit<Candidate, 'id'>): Promise<Candidate> {
