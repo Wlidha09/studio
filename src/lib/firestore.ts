@@ -180,6 +180,24 @@ export async function addHoliday(holiday: Omit<Holiday, 'id'>): Promise<Holiday>
     return convertDocTimestamps(newDoc) as Holiday;
 }
 
+export async function addHolidays(holidays: Omit<Holiday, 'id'>[], year: number): Promise<void> {
+  const batch = writeBatch(db);
+  const holidaysCollection = collection(db, 'holidays');
+
+  // To avoid duplicates, we can fetch existing holidays for the year and check against them.
+  const existingHolidays = await getHolidays(year);
+  const existingDates = new Set(existingHolidays.map(h => h.date));
+
+  holidays.forEach((holiday) => {
+    if (!existingDates.has(holiday.date)) {
+        const docRef = doc(holidaysCollection);
+        batch.set(docRef, {...holiday, createdAt: serverTimestamp()});
+    }
+  });
+
+  await batch.commit();
+}
+
 export async function deleteHoliday(id: string): Promise<void> {
     const docRef = doc(db, 'holidays', id);
     await deleteDoc(docRef);

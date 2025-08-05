@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarPlus, Trash2, Loader2, PlusCircle } from "lucide-react";
+import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Holiday } from "@/lib/types";
 import { getHolidays, addHoliday, deleteHoliday, updateHolidayPaidStatus } from "@/lib/firestore";
@@ -21,40 +21,40 @@ import {
 } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { importHolidays } from "@/ai/flows/import-holidays";
 
 export default function AttendancePage() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchHolidays() {
-      setIsLoading(true);
-      try {
-        const fetchedHolidays = await getHolidays(currentYear);
-        // Sort holidays by date
-        fetchedHolidays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        setHolidays(fetchedHolidays);
-      } catch (error) {
-        toast({
-          title: "Error fetching holidays",
-          description: "Could not retrieve the list of holidays.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  async function fetchHolidays(year: number) {
+    setIsLoading(true);
+    try {
+      const fetchedHolidays = await getHolidays(year);
+      // Sort holidays by date
+      fetchedHolidays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setHolidays(fetchedHolidays);
+    } catch (error) {
+      toast({
+        title: "Error fetching holidays",
+        description: "Could not retrieve the list of holidays.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  }
 
-    // This will run on mount and when the year changes (e.g., on Jan 1st)
+  useEffect(() => {
     const yearNow = new Date().getFullYear();
     if(yearNow !== currentYear) {
       setCurrentYear(yearNow);
     }
-
-    fetchHolidays();
+    fetchHolidays(currentYear);
   }, [currentYear, toast]);
 
   const handleAddHoliday = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,7 +71,6 @@ export default function AttendancePage() {
         return;
     }
     
-    // Ensure date is within the current year
     if (new Date(newHolidayData.date).getFullYear() !== currentYear) {
         toast({ title: "Invalid Date", description: `The holiday must be in the year ${currentYear}.`, variant: "destructive" });
         return;
@@ -108,6 +107,20 @@ export default function AttendancePage() {
     }
   };
 
+  const handleSyncHolidays = async () => {
+    setIsSyncing(true);
+    try {
+      await importHolidays({ year: currentYear });
+      toast({ title: "Holidays Synced", description: `Public holidays for ${currentYear} have been imported.` });
+      // Refetch holidays to show the newly imported ones
+      await fetchHolidays(currentYear);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to sync holidays.", variant: "destructive" });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -118,9 +131,15 @@ export default function AttendancePage() {
               Manage the list of official public holidays for the current year. This list is updated automatically on January 1st.
             </CardDescription>
           </div>
-           <Button onClick={() => setIsDialogOpen(true)}>
-             <PlusCircle className="mr-2 h-4 w-4" /> Add Holiday
-           </Button>
+           <div className="flex gap-2">
+            <Button onClick={handleSyncHolidays} disabled={isSyncing}>
+              {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Sync Holidays
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Holiday
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -131,7 +150,7 @@ export default function AttendancePage() {
             <div className="text-center py-10 border-2 border-dashed rounded-lg">
                 <CalendarPlus className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">No holidays found for {currentYear}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Get started by adding a new holiday.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Get started by adding a new holiday or syncing from Google.</p>
             </div>
           ) : (
             <div className="border rounded-lg">
