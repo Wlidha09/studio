@@ -1,27 +1,18 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getEmployees, getLeaveRequests } from "@/lib/firestore";
-import type { Employee, LeaveRequest } from "@/lib/types";
+import { getEmployees, getLeaveRequests, getHolidays } from "@/lib/firestore";
+import type { Employee, LeaveRequest, Holiday } from "@/lib/types";
 import { differenceInDays, getDaysInMonth, isSameDay, isWeekend, parseISO, startOfMonth } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-
-const publicHolidays = [ // Assuming a static list of holidays for now
-  new Date(new Date().getFullYear(), 0, 1), // New Year's Day
-  new Date(new Date().getFullYear(), 4, 1), // Labour Day
-  new Date(new Date().getFullYear(), 6, 14), // Bastille Day
-  new Date(new Date().getFullYear(), 7, 15), // Assumption Day
-  new Date(new Date().getFullYear(), 10, 1), // All Saints' Day
-  new Date(new Date().getFullYear(), 10, 11), // Armistice Day
-  new Date(new Date().getFullYear(), 11, 25), // Christmas Day
-];
 
 interface TicketResult {
     totalDays: number;
@@ -36,15 +27,22 @@ interface TicketResult {
 export default function TicketPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
     const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
     const [ticketResult, setTicketResult] = useState<TicketResult | null>(null);
 
     useEffect(() => {
         async function fetchData() {
-            const [emps, leaves] = await Promise.all([getEmployees(), getLeaveRequests()]);
+            const currentYear = new Date().getFullYear();
+            const [emps, leaves, hols] = await Promise.all([
+                getEmployees(), 
+                getLeaveRequests(),
+                getHolidays(currentYear)
+            ]);
             setEmployees(emps);
             setLeaveRequests(leaves);
+            setHolidays(hols);
         }
         fetchData();
     }, []);
@@ -54,13 +52,18 @@ export default function TicketPage() {
 
         const totalDays = getDaysInMonth(selectedMonth);
         let weekendDays = 0;
+        
+        const paidHolidaysInMonth = holidays.filter(h => 
+            h.paid && parseISO(h.date).getMonth() === selectedMonth.getMonth()
+        ).map(h => parseISO(h.date));
+
         let publicHolidaysCount = 0;
 
         for (let i = 1; i <= totalDays; i++) {
             const day = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), i);
             if (isWeekend(day)) {
                 weekendDays++;
-            } else if (publicHolidays.some(holiday => isSameDay(holiday, day))) {
+            } else if (paidHolidaysInMonth.some(holiday => isSameDay(holiday, day))) {
                 publicHolidaysCount++;
             }
         }
@@ -97,7 +100,7 @@ export default function TicketPage() {
             <CardHeader>
                 <CardTitle className="font-headline text-2xl">Monthly Work Ticket</CardTitle>
                 <CardDescription>
-                    Calculate the number of days worked per month for an employee, including holidays and leave.
+                    Calculate the number of days worked per month for an employee, including paid holidays and leave.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -158,7 +161,7 @@ export default function TicketPage() {
                                 <p className="text-2xl font-bold">{ticketResult.weekendDays}</p>
                             </div>
                             <div className="p-4 bg-muted rounded-lg">
-                                <p className="text-sm text-muted-foreground">Public Holidays</p>
+                                <p className="text-sm text-muted-foreground">Paid Public Holidays</p>
                                 <p className="text-2xl font-bold">{ticketResult.publicHolidaysCount}</p>
                             </div>
                             <div className="p-4 bg-secondary rounded-lg">
@@ -180,5 +183,3 @@ export default function TicketPage() {
         </Card>
     )
 }
-
-    
