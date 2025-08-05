@@ -26,7 +26,7 @@ export default function Home() {
             </p>
             <div className="space-x-4 mt-4">
               <Button asChild size="lg" className="px-8 py-6 text-lg">
-                <Link href="/dashboard">Go to Dashboard</Link>
+                <Link href="/login">Login</Link>
               </Button>
             </div>
           </div>
