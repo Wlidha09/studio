@@ -76,7 +76,7 @@ const menuItems = [
     href: "/dashboard/attendance",
     icon: Clock,
     label: "Attendance",
-    roles: ["Owner", "RH", "Manager", "Employee", "Dev"],
+    roles: ["Owner", "RH", "Dev"],
   },
   {
     href: "/dashboard/tickets",
@@ -173,5 +173,3 @@ export default function DashboardSidebar() {
     </Sidebar>
   );
 }
-
-    

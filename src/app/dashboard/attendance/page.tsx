@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw, Edit } from "lucide-react";
+import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw, Edit, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Holiday } from "@/lib/types";
+import type { Holiday, UserRole } from "@/lib/types";
 import { getHolidays, addHoliday, deleteHoliday, updateHoliday, updateHolidayPaidStatus } from "@/lib/firestore";
 import {
   Dialog,
@@ -22,6 +22,9 @@ import {
 import { format, parseISO } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { importHolidays } from "@/ai/flows/import-holidays";
+import { useAuth } from "@/contexts/auth-context";
+
+const ALLOWED_ROLES: UserRole[] = ["Dev", "Owner", "RH"];
 
 export default function AttendancePage() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -31,32 +34,38 @@ export default function AttendancePage() {
   const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
+  const { employee } = useAuth();
 
-  async function fetchHolidays(year: number) {
-    setIsLoading(true);
-    try {
-      const fetchedHolidays = await getHolidays(year);
-      // Sort holidays by date
-      fetchedHolidays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      setHolidays(fetchedHolidays);
-    } catch (error) {
-      toast({
-        title: "Error fetching holidays",
-        description: "Could not retrieve the list of holidays.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   useEffect(() => {
-    const yearNow = new Date().getFullYear();
-    if(yearNow !== currentYear) {
-      setCurrentYear(yearNow);
+    async function fetchHolidays(year: number) {
+      setIsLoading(true);
+      try {
+        const fetchedHolidays = await getHolidays(year);
+        // Sort holidays by date
+        fetchedHolidays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        setHolidays(fetchedHolidays);
+      } catch (error) {
+        toast({
+          title: "Error fetching holidays",
+          description: "Could not retrieve the list of holidays.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
-    fetchHolidays(currentYear);
-  }, [currentYear, toast]);
+    
+    if (employee && ALLOWED_ROLES.includes(employee.role)) {
+        const yearNow = new Date().getFullYear();
+        if(yearNow !== currentYear) {
+        setCurrentYear(yearNow);
+        }
+        fetchHolidays(currentYear);
+    } else {
+        setIsLoading(false);
+    }
+  }, [currentYear, toast, employee]);
 
   const handleEdit = (holiday: Holiday) => {
     setEditingHoliday(holiday);
@@ -133,13 +142,37 @@ export default function AttendancePage() {
       await importHolidays({ year: currentYear });
       toast({ title: "Holidays Synced", description: `Public holidays for ${currentYear} have been imported.` });
       // Refetch holidays to show the newly imported ones
-      await fetchHolidays(currentYear);
+      const fetchedHolidays = await getHolidays(currentYear);
+      fetchedHolidays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setHolidays(fetchedHolidays);
     } catch (error) {
       toast({ title: "Error", description: "Failed to sync holidays.", variant: "destructive" });
     } finally {
       setIsSyncing(false);
     }
   };
+
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  if (!employee || !ALLOWED_ROLES.includes(employee.role)) {
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="text-destructive flex items-center gap-2"><ShieldAlert /> Access Denied</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>You do not have the necessary permissions to view this page. Please contact an administrator if you believe this is an error.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
 
   return (
     <>
@@ -162,11 +195,7 @@ export default function AttendancePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-40">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : holidays.length === 0 ? (
+          {holidays.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed rounded-lg">
                 <CalendarPlus className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">No holidays found for {currentYear}</h3>
