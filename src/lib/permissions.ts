@@ -14,7 +14,7 @@ export type PagePermissions = {
     delete?: boolean;
 };
 
-export type Permissions = Record<PageKey, PagePermissions>;
+export type Permissions = Partial<Record<PageKey, PagePermissions>>;
 
 export type RolePermissions = Record<UserRole, Permissions>;
 
@@ -91,6 +91,3 @@ const initialPermissions: RolePermissions = {
 };
 
 export const permissionsAtom = atomWithStorage<RolePermissions>('role_permissions', initialPermissions);
-
-export const pagePermissions = initialPermissions;
-

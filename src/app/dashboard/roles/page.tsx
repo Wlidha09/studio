@@ -22,7 +22,7 @@ export default function RolesPage() {
             if (!newPermissions[role]) newPermissions[role] = {} as any;
             if (!newPermissions[role][page]) newPermissions[role][page] = { view: false };
 
-            const updatedPagePermissions = { ...newPermissions[role][page], [action]: checked };
+            const updatedPagePermissions = { ...(newPermissions[role][page] || {}), [action]: checked };
 
             // If view is unchecked, all other permissions for that page should be unchecked
             if (action === 'view' && !checked) {
@@ -52,13 +52,13 @@ export default function RolesPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg">
+                <div className="border rounded-lg overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[150px] sticky left-0 bg-background z-10">Role</TableHead>
                                 {Object.values(pages).map(pageName => (
-                                    <TableHead key={pageName} colSpan={4} className="text-center">{pageName}</TableHead>
+                                    <TableHead key={pageName} colSpan={4} className="text-center min-w-[240px]">{pageName}</TableHead>
                                 ))}
                             </TableRow>
                             <TableRow>
@@ -76,15 +76,19 @@ export default function RolesPage() {
                                     <TableCell className="font-medium sticky left-0 bg-background z-10">{role}</TableCell>
                                     {Object.keys(pages).map(pageKey => {
                                         const pageKeyTyped = pageKey as PageKey;
-                                        const pagePerms = permissions[role]?.[pageKeyTyped];
-                                        const hasAction = (action: keyof PagePermissions) => pagePerms && action in pagePerms;
+                                        const pagePerms = permissions[role]?.[pageKeyTyped] ?? {};
+                                        const hasAction = (action: keyof PagePermissions) => {
+                                            const allPerms = permissions['Dev']?.[pageKeyTyped] ?? {};
+                                            return action in allPerms;
+                                        };
+
 
                                         return actions.map(action => (
                                             <TableCell key={`${role}-${pageKey}-${action}`}>
                                                 {hasAction(action) && (
                                                      <Checkbox
                                                         id={`${role}-${pageKey}-${action}`}
-                                                        checked={pagePerms?.[action] ?? false}
+                                                        checked={!!pagePerms?.[action]}
                                                         onCheckedChange={(checked) => handlePermissionChange(role, pageKeyTyped, action, !!checked)}
                                                         disabled={action !== 'view' && !pagePerms?.view}
                                                     />
