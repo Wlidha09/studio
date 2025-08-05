@@ -25,6 +25,7 @@ import {
   LogOut,
   UserCircle,
   Database,
+  ClipboardCheck,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -76,6 +77,12 @@ const menuItems = [
     icon: Clock,
     label: "Attendance",
     roles: ["Owner", "RH", "Manager", "Employee", "Dev"],
+  },
+  {
+    href: "/dashboard/tickets",
+    icon: ClipboardCheck,
+    label: "Tickets",
+    roles: ["Owner", "RH", "Manager", "Dev"],
   },
   {
     href: "/dashboard/job-description-generator",
@@ -166,3 +173,5 @@ export default function DashboardSidebar() {
     </Sidebar>
   );
 }
+
+    
