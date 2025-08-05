@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updateEmployee } from "@/lib/firestore";
 import type { Employee } from "@/lib/types";
 import { Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
   const { employee, setEmployee } = useAuth();
@@ -76,6 +77,12 @@ export default function ProfilePage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
+            <div className="flex justify-center mb-6">
+                <Avatar className="h-24 w-24">
+                    <AvatarImage src={`https://placehold.co/96x96.png?text=${employee.name.charAt(0)}`} alt={employee.name} />
+                    <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
