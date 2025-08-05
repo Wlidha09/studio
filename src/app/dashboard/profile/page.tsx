@@ -12,6 +12,7 @@ import { updateEmployee } from "@/lib/firestore";
 import type { Employee } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
   const { employee, setEmployee } = useAuth();
@@ -76,85 +77,64 @@ export default function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
-            <div className="flex justify-center mb-6">
+          <CardContent className="space-y-8">
+            <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
                     <AvatarImage src={`https://placehold.co/96x96.png?text=${employee.name.charAt(0)}`} alt={employee.name} />
                     <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name || ""}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={employee.email}
-                  readOnly
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                    <Label htmlFor="birthDate">Birth Date</Label>
-                    <Input
-                    id="birthDate"
-                    name="birthDate"
-                    type="date"
-                    value={formData.birthDate || ""}
-                    onChange={handleChange}
-                    required
-                    />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="hireDate">Hire Date</Label>
-                    <Input
-                    id="hireDate"
-                    name="hireDate"
-                    type="date"
-                    value={employee.hireDate}
-                    readOnly
-                    disabled
-                    className="bg-muted"
-                    />
+                <div className="grid gap-1.5">
+                    <h2 className="text-2xl font-bold">{employee.name}</h2>
+                    <p className="text-muted-foreground">{employee.email}</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                    id="department"
-                    name="department"
-                    value={employee.department}
-                    readOnly
-                    disabled
-                    className="bg-muted"
-                    />
+            <Separator />
+
+            <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Personal Information</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input
+                        id="name"
+                        name="name"
+                        value={formData.name || ""}
+                        onChange={handleChange}
+                        required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="birthDate">Birth Date</Label>
+                        <Input
+                        id="birthDate"
+                        name="birthDate"
+                        type="date"
+                        value={formData.birthDate || ""}
+                        onChange={handleChange}
+                        required
+                        />
+                    </div>
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Input
-                    id="role"
-                    name="role"
-                    value={employee.role}
-                    readOnly
-                    disabled
-                    className="bg-muted"
-                    />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Company Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="department">Department</Label>
+                        <Input id="department" value={employee.department} readOnly disabled className="bg-muted" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Input id="role" value={employee.role} readOnly disabled className="bg-muted" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="hireDate">Hire Date</Label>
+                        <Input id="hireDate" type="date" value={employee.hireDate} readOnly disabled className="bg-muted" />
+                    </div>
                 </div>
             </div>
           </CardContent>
