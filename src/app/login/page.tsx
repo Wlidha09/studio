@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
+import { signInWithGoogle, signInWithEmail, createUserWithEmail } from "@/lib/auth";
 import { Briefcase, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -27,25 +27,31 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-    const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const user = await signInWithEmail(email, password);
+            const user = isRegisterMode 
+                ? await createUserWithEmail(email, password)
+                : await signInWithEmail(email, password);
+
             if (user) {
                 router.push("/dashboard");
             } else {
                  toast({
-                    title: "Login Failed",
-                    description: "Please check your email and password.",
+                    title: isRegisterMode ? "Registration Failed" : "Login Failed",
+                    description: isRegisterMode 
+                        ? "Could not create an account. Please try again."
+                        : "Please check your email and password.",
                     variant: "destructive",
                 });
             }
         } catch (error) {
-            console.error("Login failed:", error);
+            console.error(isRegisterMode ? "Registration failed:" : "Login failed:", error);
             toast({
-                title: "Login Failed",
+                title: isRegisterMode ? "Registration Failed" : "Login Failed",
                 description: "An unexpected error occurred. Please try again.",
                 variant: "destructive",
             });
@@ -82,10 +88,10 @@ export default function LoginPage() {
                         <CardTitle className="text-2xl font-bold">HResource</CardTitle>
                     </div>
                     <CardDescription>
-                        Sign in to access your dashboard
+                        {isRegisterMode ? "Create an account to get started" : "Sign in to access your dashboard"}
                     </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleEmailLogin}>
+                <form onSubmit={handleFormSubmit}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
@@ -99,7 +105,10 @@ export default function LoginPage() {
                     <CardFooter className="flex flex-col gap-4">
                         <Button type="submit" className="w-full" disabled={isLoading}>
                              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                             Sign In
+                             {isRegisterMode ? "Register" : "Sign In"}
+                        </Button>
+                         <Button type="button" variant="link" onClick={() => setIsRegisterMode(!isRegisterMode)}>
+                            {isRegisterMode ? "Already have an account? Sign In" : "Don't have an account? Register"}
                         </Button>
                         <div className="relative w-full">
                             <div className="absolute inset-0 flex items-center">
