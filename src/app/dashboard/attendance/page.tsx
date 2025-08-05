@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw } from "lucide-react";
+import { CalendarPlus, Trash2, Loader2, PlusCircle, RefreshCw, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Holiday } from "@/lib/types";
-import { getHolidays, addHoliday, deleteHoliday, updateHolidayPaidStatus } from "@/lib/firestore";
+import { getHolidays, addHoliday, deleteHoliday, updateHoliday, updateHolidayPaidStatus } from "@/lib/firestore";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ export default function AttendancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
 
@@ -57,34 +58,53 @@ export default function AttendancePage() {
     fetchHolidays(currentYear);
   }, [currentYear, toast]);
 
-  const handleAddHoliday = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEdit = (holiday: Holiday) => {
+    setEditingHoliday(holiday);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveHoliday = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newHolidayData = {
+    const holidayData = {
       name: formData.get("name") as string,
       date: formData.get("date") as string,
       paid: (formData.get("paid") as string) === 'on',
     };
 
-    if (!newHolidayData.name || !newHolidayData.date) {
+    if (!holidayData.name || !holidayData.date) {
         toast({ title: "Missing fields", description: "Please provide both name and date.", variant: "destructive" });
         return;
     }
     
-    if (new Date(newHolidayData.date).getFullYear() !== currentYear) {
+    if (new Date(holidayData.date).getFullYear() !== currentYear) {
         toast({ title: "Invalid Date", description: `The holiday must be in the year ${currentYear}.`, variant: "destructive" });
         return;
     }
 
-    try {
-      const newHoliday = await addHoliday(newHolidayData);
-      const updatedHolidays = [...holidays, newHoliday].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      setHolidays(updatedHolidays);
-      toast({ title: "Holiday Added", description: `${newHoliday.name} has been added.` });
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to add holiday.", variant: "destructive" });
+    if (editingHoliday) {
+        const updatedHoliday = { ...editingHoliday, ...holidayData };
+        try {
+            await updateHoliday(updatedHoliday);
+            const updatedHolidays = holidays.map(h => h.id === updatedHoliday.id ? updatedHoliday : h).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            setHolidays(updatedHolidays);
+            toast({ title: "Holiday Updated", description: `${updatedHoliday.name} has been updated.` });
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update holiday.", variant: "destructive" });
+        }
+    } else {
+        try {
+          const newHoliday = await addHoliday(holidayData);
+          const updatedHolidays = [...holidays, newHoliday].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          setHolidays(updatedHolidays);
+          toast({ title: "Holiday Added", description: `${newHoliday.name} has been added.` });
+        } catch (error) {
+          toast({ title: "Error", description: "Failed to add holiday.", variant: "destructive" });
+        }
     }
+    
+    setIsDialogOpen(false);
+    setEditingHoliday(null);
   };
 
   const handleDeleteHoliday = async (id: string) => {
@@ -136,7 +156,7 @@ export default function AttendancePage() {
               {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
               Sync Holidays
             </Button>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={() => { setEditingHoliday(null); setIsDialogOpen(true); }}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Holiday
             </Button>
           </div>
@@ -177,6 +197,9 @@ export default function AttendancePage() {
                                 />
                             </TableCell>
                             <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(holiday)}>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleDeleteHoliday(holiday.id)}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -193,20 +216,20 @@ export default function AttendancePage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Holiday</DialogTitle>
+            <DialogTitle>{editingHoliday ? "Edit Holiday" : "Add New Holiday"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddHoliday}>
+          <form onSubmit={handleSaveHoliday}>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Holiday Name</Label>
-                <Input id="name" name="name" placeholder="e.g., Revolution and Youth Day" required />
+                <Input id="name" name="name" defaultValue={editingHoliday?.name} placeholder="e.g., Revolution and Youth Day" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
-                <Input id="date" name="date" type="date" required />
+                <Input id="date" name="date" type="date" defaultValue={editingHoliday?.date} required />
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="paid" name="paid" defaultChecked={true} />
+                <Checkbox id="paid" name="paid" defaultChecked={editingHoliday?.paid ?? true} />
                 <Label
                   htmlFor="paid"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

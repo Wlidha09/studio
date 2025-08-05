@@ -180,6 +180,12 @@ export async function addHoliday(holiday: Omit<Holiday, 'id'>): Promise<Holiday>
     return convertDocTimestamps(newDoc) as Holiday;
 }
 
+export async function updateHoliday(holiday: Holiday): Promise<void> {
+  const { id, ...data } = holiday;
+  const docRef = doc(db, 'holidays', id);
+  await updateDoc(docRef, data);
+}
+
 export async function addHolidays(holidays: Omit<Holiday, 'id'>[], year: number): Promise<void> {
   const batch = writeBatch(db);
   const holidaysCollection = collection(db, 'holidays');
