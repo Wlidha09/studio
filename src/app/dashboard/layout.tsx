@@ -1,6 +1,6 @@
 import DashboardSidebar from "@/components/dashboard/sidebar";
 import Header from "@/components/dashboard/header";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { RoleProvider } from "@/contexts/role-context";
 
 export default function DashboardLayout({
@@ -11,15 +11,13 @@ export default function DashboardLayout({
   return (
     <RoleProvider>
       <SidebarProvider>
-        <div className="flex min-h-screen">
           <DashboardSidebar />
-          <main className="flex-1 flex flex-col">
+          <SidebarInset>
             <Header />
-            <div className="flex-1 p-4 md:p-8 bg-background overflow-y-auto">
+            <main className="flex-1 p-4 md:p-8 bg-background overflow-y-auto">
               {children}
-            </div>
-          </main>
-        </div>
+            </main>
+          </SidebarInset>
       </SidebarProvider>
     </RoleProvider>
   );
