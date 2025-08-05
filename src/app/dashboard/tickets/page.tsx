@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getEmployees, getLeaveRequests, getHolidays } from "@/lib/firestore";
 import type { Employee, LeaveRequest, Holiday } from "@/lib/types";
-import { differenceInDays, getDaysInMonth, isSameDay, isWeekend, parseISO, startOfMonth } from "date-fns";
+import { differenceInDays, getDaysInMonth, isSameDay, isWeekend, parseISO, startOfMonth, format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -130,7 +130,7 @@ export default function TicketPage() {
                                 )}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {selectedMonth ? selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' }) : <span>Pick a month</span>}
+                                {selectedMonth ? format(selectedMonth, 'LLLL yyyy') : <span>Pick a month</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
