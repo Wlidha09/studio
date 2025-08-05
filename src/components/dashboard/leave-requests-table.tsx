@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, PlusCircle, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "../ui/badge";
 import type { LeaveRequest, Employee } from "@/lib/types";
-import { useRole } from "@/contexts/role-context";
+import { useAuth } from "@/contexts/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +57,7 @@ interface LeaveRequestsTableProps {
 export default function LeaveRequestsTable({ initialLeaveRequests, employees }: LeaveRequestsTableProps) {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeaveRequests);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { role } = useRole();
+  const { employee } = useAuth();
   const { toast } = useToast();
 
   const handleStatusChange = async (id: string, status: Status) => {
@@ -73,10 +74,9 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!employee) return;
+    
     const formData = new FormData(e.currentTarget);
-    const employeeId = formData.get('employeeId') as string;
-    const employee = employees.find(emp => emp.id === employeeId);
-
     const leaveData = {
       leaveType: formData.get('leaveType') as LeaveRequest['leaveType'],
       startDate: formData.get('startDate') as string,
@@ -84,8 +84,8 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
     };
     
     const newRequestData: Omit<LeaveRequest, 'id'> = {
-      employeeName: employee?.name || 'Unknown',
-      employeeId: employeeId,
+      employeeName: employee.name,
+      employeeId: employee.id,
       status: 'Pending',
       ...leaveData,
     };
@@ -101,18 +101,18 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
     setIsDialogOpen(false);
   };
   
+  const role = employee?.role;
   const canManage = role === "Manager" || role === "RH" || role === "Owner";
   const isEmployee = role === "Employee";
-  const currentUser = isEmployee ? employees.find(e => e.role === 'Employee') : null;
-
+ 
   const filteredRequests = isEmployee 
-    ? leaveRequests.filter(req => req.employeeId === currentUser?.id)
+    ? leaveRequests.filter(req => req.employeeId === employee?.id)
     : leaveRequests;
 
 
   return (
     <>
-      {isEmployee && (
+      {role && (isEmployee || canManage) && (
         <div className="flex justify-end mb-4">
           <Button onClick={() => setIsDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
@@ -180,7 +180,6 @@ export default function LeaveRequestsTable({ initialLeaveRequests, employees }: 
           </DialogHeader>
           <form onSubmit={handleSave}>
             <div className="grid gap-4 py-4">
-              {isEmployee && <input type="hidden" name="employeeId" value={currentUser?.id} />}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="leaveType" className="text-right">Leave Type</Label>
                 <Select name="leaveType" required>

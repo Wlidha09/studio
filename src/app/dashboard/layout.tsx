@@ -1,7 +1,9 @@
+
 import DashboardSidebar from "@/components/dashboard/sidebar";
 import Header from "@/components/dashboard/header";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { RoleProvider } from "@/contexts/role-context";
+import { AuthProvider } from "@/contexts/auth-context";
 
 export default function DashboardLayout({
   children,
@@ -9,16 +11,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleProvider>
-      <SidebarProvider>
-          <DashboardSidebar />
-          <SidebarInset>
-            <Header />
-            <main className="flex-1 p-4 md:p-8 bg-background overflow-y-auto">
-              {children}
-            </main>
-          </SidebarInset>
-      </SidebarProvider>
-    </RoleProvider>
+    <AuthProvider>
+      <RoleProvider>
+        <SidebarProvider>
+            <DashboardSidebar />
+            <SidebarInset>
+              <Header />
+              <main className="flex-1 p-4 md:p-8 bg-background overflow-y-auto">
+                {children}
+              </main>
+            </SidebarInset>
+        </SidebarProvider>
+      </RoleProvider>
+    </AuthProvider>
   );
 }

@@ -2,18 +2,20 @@
 "use server";
 
 import { db } from './firebase';
-import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
 import type { Employee, Candidate, Department, LeaveRequest } from './types';
 
 // Helper function to convert Firestore Timestamps to strings
-const convertTimestamps = (obj: any) => {
-  for (const key in obj) {
-    if (obj[key] instanceof Timestamp) {
-      obj[key] = obj[key].toDate().toISOString();
+const convertDocTimestamps = (doc: any) => {
+  const data = doc.data();
+  for (const key in data) {
+    if (data[key] instanceof Timestamp) {
+      // Return ISO string for dates
+      data[key] = data[key].toDate().toISOString().split('T')[0];
     }
   }
-  return obj;
+  return { id: doc.id, ...data };
 };
 
 // Seed Database
@@ -56,22 +58,22 @@ export async function seedDatabase() {
 // Get Collections
 export async function getEmployees(): Promise<Employee[]> {
   const querySnapshot = await getDocs(collection(db, 'employees'));
-  return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Employee);
+  return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as Employee);
 }
 
 export async function getCandidates(): Promise<Candidate[]> {
     const querySnapshot = await getDocs(collection(db, 'candidates'));
-    return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Candidate);
+    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as Candidate);
 }
 
 export async function getDepartments(): Promise<Department[]> {
     const querySnapshot = await getDocs(collection(db, 'departments'));
-    return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Department);
+    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as Department);
 }
 
 export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     const querySnapshot = await getDocs(collection(db, 'leaveRequests'));
-    return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as LeaveRequest);
+    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as LeaveRequest);
 }
 
 
@@ -90,6 +92,25 @@ export async function updateEmployee(employee: Employee): Promise<void> {
 export async function deleteEmployee(id: string): Promise<void> {
   const docRef = doc(db, 'employees', id);
   await deleteDoc(docRef);
+}
+
+export async function getEmployeeByEmail(email: string): Promise<Employee | null> {
+    const q = query(collection(db, 'employees'), where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const doc = querySnapshot.docs[0];
+    return convertDocTimestamps(doc) as Employee;
+}
+
+export async function getEmployeeById(id: string): Promise<Employee | null> {
+    const docRef = doc(db, 'employees', id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return convertDocTimestamps(docSnap) as Employee;
+    }
+    return null;
 }
 
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -35,6 +36,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "../ui/label";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth";
 
 const menuItems = [
   {
@@ -90,12 +94,21 @@ const menuItems = [
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const { role, setRole } = useRole();
+  const { employee } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   const isNavItemActive = (href: string) => {
     return pathname === href;
   };
 
-  const availableMenuItems = menuItems.filter(item => (item.roles as UserRole[]).includes(role));
+  const currentRole = employee?.role || role;
+
+  const availableMenuItems = menuItems.filter(item => (item.roles as UserRole[]).includes(currentRole));
 
   return (
     <Sidebar>
@@ -143,12 +156,10 @@ export default function DashboardSidebar() {
         <SidebarSeparator />
         <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="/">
-              <SidebarMenuButton>
-                <LogOut />
-                <span>Logout</span>
-              </SidebarMenuButton>
-            </Link>
+            <SidebarMenuButton onClick={handleLogout}>
+              <LogOut />
+              <span>Logout</span>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
