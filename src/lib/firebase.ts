@@ -9,7 +9,7 @@ const firebaseConfig = {
   "appId": "1:591491822516:web:b0f99c158ffd35179f78e1",
   "storageBucket": "hresource-42xov.firebasestorage.app",
   "apiKey": "AIzaSyBjvNMOaxQNE3UWQq9t7Vlu_ycNhqofilY",
-  "authDomain": "hresource-42xov.web.app",
+  "authDomain": "hresource-42xov.firebaseapp.com",
   "measurementId": "",
   "messagingSenderId": "591491822516"
 };
