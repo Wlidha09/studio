@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -39,6 +40,9 @@ import {
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { addCandidate, deleteCandidate, updateCandidate } from "@/lib/firestore";
+import { useRole } from "@/contexts/role-context";
+import { useAtomValue } from "jotai";
+import { permissionsAtom } from "@/lib/permissions";
 
 type Status = "Applied" | "Interviewing" | "Offered" | "Hired" | "Rejected";
 
@@ -59,6 +63,11 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const { toast } = useToast();
+  const { role } = useRole();
+  const permissions = useAtomValue(permissionsAtom);
+  const canCreate = permissions[role]?.candidates?.create;
+  const canEdit = permissions[role]?.candidates?.edit;
+  const canDelete = permissions[role]?.candidates?.delete;
 
   const handleEdit = (candidate: Candidate) => {
     setEditingCandidate(candidate);
@@ -110,9 +119,11 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditingCandidate(null); setIsDialogOpen(true); }}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Candidate
-        </Button>
+        {canCreate && (
+            <Button onClick={() => { setEditingCandidate(null); setIsDialogOpen(true); }}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Candidate
+            </Button>
+        )}
       </div>
       <div className="border rounded-lg">
         <Table>
@@ -121,7 +132,7 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
               <TableHead>Name</TableHead>
               <TableHead>Applied Role</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {(canEdit || canDelete) && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -145,20 +156,22 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
                 <TableCell>
                   <Badge variant="outline" className={statusColors[candidate.status]}>{candidate.status}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(candidate)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(candidate.id)} className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {(canEdit || canDelete) && (
+                    <TableCell className="text-right">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        {canEdit && <DropdownMenuItem onClick={() => handleEdit(candidate)}>Edit</DropdownMenuItem>}
+                        {canDelete && <DropdownMenuItem onClick={() => handleDelete(candidate.id)} className="text-destructive">Delete</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

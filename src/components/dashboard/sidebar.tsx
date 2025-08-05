@@ -41,7 +41,8 @@ import { Label } from "../ui/label";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
-import { pagePermissions } from "@/lib/permissions";
+import { useAtomValue } from "jotai";
+import { permissionsAtom } from "@/lib/permissions";
 import type { PageKey } from "@/lib/permissions";
 
 const menuItems = [
@@ -112,6 +113,7 @@ export default function DashboardSidebar() {
   const { role, setRole } = useRole();
   const { employee } = useAuth();
   const router = useRouter();
+  const permissions = useAtomValue(permissionsAtom);
 
   const handleLogout = async () => {
     await signOut();
@@ -123,7 +125,7 @@ export default function DashboardSidebar() {
   };
 
   const visibleMenuItems = menuItems.filter(item => {
-    return pagePermissions[role]?.[item.pageKey];
+    return permissions[role]?.[item.pageKey]?.view;
   });
 
   return (

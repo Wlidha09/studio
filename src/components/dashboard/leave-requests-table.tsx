@@ -40,6 +40,9 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
+import { useRole } from "@/contexts/role-context";
+import { useAtomValue } from "jotai";
+import { permissionsAtom } from "@/lib/permissions";
 
 type Status = "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 
@@ -59,6 +62,10 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { employee } = useAuth();
   const { toast } = useToast();
+  const { role } = useRole();
+  const permissions = useAtomValue(permissionsAtom);
+  const canCreate = permissions[role]?.leaves?.create;
+  const canEdit = permissions[role]?.leaves?.edit;
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -110,9 +117,11 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
-        </Button>
+        {canCreate && (
+            <Button onClick={() => setIsDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
+            </Button>
+        )}
       </div>
       <div className="border rounded-lg">
         <Table>
@@ -122,7 +131,7 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
               <TableHead>Leave Type</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {canEdit && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,41 +145,43 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
                     {request.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          disabled={
-                            request.status === "Approved" ||
-                            request.status === "Rejected"
-                          }
-                        >
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {request.status === "Pending" && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve (Manager)
+                {canEdit && (
+                    <TableCell className="text-right">
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            disabled={
+                                request.status === "Approved" ||
+                                request.status === "Rejected"
+                            }
+                            >
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {request.status === "Pending" && (
+                                <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
+                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                    Approve (Manager)
+                                </DropdownMenuItem>
+                            )}
+                            {request.status === "ApprovedByManager" && (
+                                <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
+                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                    Approve (RH)
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} disabled={request.status === 'Rejected' || request.status === 'Approved'}>
+                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                            Reject
                             </DropdownMenuItem>
-                        )}
-                        {request.status === "ApprovedByManager" && (
-                             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve (RH)
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} disabled={request.status === 'Rejected' || request.status === 'Approved'}>
-                          <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                          Reject
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

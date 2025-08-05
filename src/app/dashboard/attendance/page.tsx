@@ -22,6 +22,9 @@ import {
 import { format, parseISO } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { importHolidays } from "@/ai/flows/import-holidays";
+import { useRole } from "@/contexts/role-context";
+import { useAtomValue } from "jotai";
+import { permissionsAtom } from "@/lib/permissions";
 
 export default function AttendancePage() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -31,6 +34,11 @@ export default function AttendancePage() {
   const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
+  const { role } = useRole();
+  const permissions = useAtomValue(permissionsAtom);
+  const canCreate = permissions[role]?.attendance?.create;
+  const canEdit = permissions[role]?.attendance?.edit;
+  const canDelete = permissions[role]?.attendance?.delete;
 
   useEffect(() => {
     async function fetchHolidays(year: number) {
@@ -162,13 +170,17 @@ export default function AttendancePage() {
             </CardDescription>
           </div>
            <div className="flex gap-2">
-            <Button onClick={handleSyncHolidays} disabled={isSyncing}>
-              {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              Sync Holidays
-            </Button>
-            <Button onClick={() => { setEditingHoliday(null); setIsDialogOpen(true); }}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Holiday
-            </Button>
+            {canCreate && (
+                <>
+                    <Button onClick={handleSyncHolidays} disabled={isSyncing}>
+                    {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    Sync Holidays
+                    </Button>
+                    <Button onClick={() => { setEditingHoliday(null); setIsDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Holiday
+                    </Button>
+                </>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -187,7 +199,7 @@ export default function AttendancePage() {
                         <TableHead>Day</TableHead>
                         <TableHead>Holiday Name</TableHead>
                         <TableHead>Paid</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        {(canEdit || canDelete) && <TableHead className="text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -199,17 +211,24 @@ export default function AttendancePage() {
                             <TableCell>
                                 <Checkbox
                                     checked={holiday.paid}
-                                    onCheckedChange={(checked) => handlePaidChange(holiday.id, !!checked)}
+                                    onCheckedChange={(checked) => canEdit && handlePaidChange(holiday.id, !!checked)}
+                                    disabled={!canEdit}
                                 />
                             </TableCell>
-                            <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => handleEdit(holiday)}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteHoliday(holiday.id)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </TableCell>
+                            {(canEdit || canDelete) && (
+                                <TableCell className="text-right">
+                                    {canEdit && (
+                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(holiday)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    {canDelete && (
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteHoliday(holiday.id)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    )}
+                                </TableCell>
+                            )}
                         </TableRow>
                         ))}
                     </TableBody>
