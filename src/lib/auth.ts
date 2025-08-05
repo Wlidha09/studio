@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, User, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { app } from "./firebase";
 
 const auth = getAuth(app);
@@ -13,6 +13,26 @@ export async function signInWithGoogle(): Promise<User | null> {
         return result.user;
     } catch (error) {
         console.error("Error signing in with Google: ", error);
+        return null;
+    }
+}
+
+export async function signInWithEmail(email: string, pass: string): Promise<User | null> {
+    try {
+        const result = await signInWithEmailAndPassword(auth, email, pass);
+        return result.user;
+    } catch (error) {
+        console.error("Error signing in with Email: ", error);
+        return null;
+    }
+}
+
+export async function createUserWithEmail(email: string, pass: string): Promise<User | null> {
+    try {
+        const result = await createUserWithEmailAndPassword(auth, email, pass);
+        return result.user;
+    } catch (error) {
+        console.error("Error creating user with Email: ", error);
         return null;
     }
 }

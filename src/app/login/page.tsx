@@ -1,11 +1,15 @@
 
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { signInWithGoogle } from "@/lib/auth";
-import { Briefcase } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signInWithGoogle, signInWithEmail } from "@/lib/auth";
+import { Briefcase, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -18,8 +22,40 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function LoginPage() {
     const router = useRouter();
+    const { toast } = useToast();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const handleLogin = async () => {
+    const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            const user = await signInWithEmail(email, password);
+            if (user) {
+                router.push("/dashboard");
+            } else {
+                 toast({
+                    title: "Login Failed",
+                    description: "Please check your email and password.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            console.error("Login failed:", error);
+            toast({
+                title: "Login Failed",
+                description: "An unexpected error occurred. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setIsGoogleLoading(true);
         try {
             const user = await signInWithGoogle();
             if (user) {
@@ -27,7 +63,13 @@ export default function LoginPage() {
             }
         } catch (error) {
             console.error("Login failed:", error);
-            // You can show a toast notification here
+            toast({
+                title: "Login Failed",
+                description: "Could not sign in with Google. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsGoogleLoading(false);
         }
     };
 
@@ -43,12 +85,38 @@ export default function LoginPage() {
                         Sign in to access your dashboard
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Button variant="outline" className="w-full" onClick={handleLogin}>
-                        <GoogleIcon className="mr-2 h-5 w-5" />
-                        Sign in with Google
-                    </Button>
-                </CardContent>
+                <form onSubmit={handleEmailLogin}>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-4">
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                             Sign In
+                        </Button>
+                        <div className="relative w-full">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">
+                                Or continue with
+                                </span>
+                            </div>
+                        </div>
+                        <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button" disabled={isGoogleLoading}>
+                            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> :  <GoogleIcon className="mr-2 h-5 w-5" />}
+                            Sign in with Google
+                        </Button>
+                    </CardFooter>
+                </form>
             </Card>
         </div>
     );
