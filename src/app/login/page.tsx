@@ -10,6 +10,7 @@ import { signInWithGoogle, signInWithEmail, createUserWithEmail } from "@/lib/au
 import { Briefcase, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import type { FirebaseError } from "firebase/app";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -48,11 +49,23 @@ export default function LoginPage() {
                     variant: "destructive",
                 });
             }
-        } catch (error) {
-            console.error(isRegisterMode ? "Registration failed:" : "Login failed:", error);
+        } catch (error: any) {
+            const firebaseError = error as FirebaseError;
+            let description = "An unexpected error occurred. Please try again.";
+
+            if (isRegisterMode) {
+                if (firebaseError.code === "auth/email-already-in-use") {
+                    description = "This email is already in use. Please sign in or use a different email.";
+                }
+            } else {
+                if (firebaseError.code === "auth/wrong-password" || firebaseError.code === "auth/user-not-found" || firebaseError.code === 'auth/invalid-credential') {
+                    description = "Invalid email or password. Please try again.";
+                }
+            }
+
             toast({
                 title: isRegisterMode ? "Registration Failed" : "Login Failed",
-                description: "An unexpected error occurred. Please try again.",
+                description: description,
                 variant: "destructive",
             });
         } finally {

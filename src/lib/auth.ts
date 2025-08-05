@@ -23,7 +23,7 @@ export async function signInWithEmail(email: string, pass: string): Promise<User
         return result.user;
     } catch (error) {
         console.error("Error signing in with Email: ", error);
-        return null;
+        throw error;
     }
 }
 
@@ -33,7 +33,7 @@ export async function createUserWithEmail(email: string, pass: string): Promise<
         return result.user;
     } catch (error) {
         console.error("Error creating user with Email: ", error);
-        return null;
+        throw error;
     }
 }
 
