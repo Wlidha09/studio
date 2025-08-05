@@ -1,3 +1,4 @@
+
 export type UserRole = "Owner" | "RH" | "Manager" | "Employee" | "Dev";
 
 export type Employee = {
@@ -40,4 +41,5 @@ export type Holiday = {
     id: string;
     name: string;
     date: string; // YYYY-MM-DD
+    paid: boolean;
 };

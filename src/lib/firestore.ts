@@ -184,3 +184,8 @@ export async function deleteHoliday(id: string): Promise<void> {
     const docRef = doc(db, 'holidays', id);
     await deleteDoc(docRef);
 }
+
+export async function updateHolidayPaidStatus(id: string, paid: boolean): Promise<void> {
+    const docRef = doc(db, 'holidays', id);
+    await updateDoc(docRef, { paid });
+}

@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CalendarPlus, Trash2, Loader2, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Holiday } from "@/lib/types";
-import { getHolidays, addHoliday, deleteHoliday } from "@/lib/firestore";
+import { getHolidays, addHoliday, deleteHoliday, updateHolidayPaidStatus } from "@/lib/firestore";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AttendancePage() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -62,6 +63,7 @@ export default function AttendancePage() {
     const newHolidayData = {
       name: formData.get("name") as string,
       date: formData.get("date") as string,
+      paid: (formData.get("paid") as string) === 'on',
     };
 
     if (!newHolidayData.name || !newHolidayData.date) {
@@ -93,6 +95,16 @@ export default function AttendancePage() {
       toast({ title: "Holiday Deleted", description: "The holiday has been removed." });
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete holiday.", variant: "destructive" });
+    }
+  };
+
+  const handlePaidChange = async (id: string, paid: boolean) => {
+    try {
+      await updateHolidayPaidStatus(id, paid);
+      setHolidays(holidays.map(h => h.id === id ? { ...h, paid } : h));
+      toast({ title: "Holiday Updated", description: "Paid status has been changed." });
+    } catch (error) {
+       toast({ title: "Error", description: "Failed to update paid status.", variant: "destructive" });
     }
   };
 
@@ -129,6 +141,7 @@ export default function AttendancePage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Day</TableHead>
                         <TableHead>Holiday Name</TableHead>
+                        <TableHead>Paid</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -138,6 +151,12 @@ export default function AttendancePage() {
                             <TableCell className="font-medium">{format(parseISO(holiday.date), 'MMMM d, yyyy')}</TableCell>
                             <TableCell>{format(parseISO(holiday.date), 'eeee')}</TableCell>
                             <TableCell>{holiday.name}</TableCell>
+                            <TableCell>
+                                <Checkbox
+                                    checked={holiday.paid}
+                                    onCheckedChange={(checked) => handlePaidChange(holiday.id, !!checked)}
+                                />
+                            </TableCell>
                             <TableCell className="text-right">
                                 <Button variant="ghost" size="icon" onClick={() => handleDeleteHoliday(holiday.id)}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -166,6 +185,15 @@ export default function AttendancePage() {
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <Input id="date" name="date" type="date" required />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="paid" name="paid" defaultChecked={true} />
+                <Label
+                  htmlFor="paid"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Paid Holiday
+                </Label>
               </div>
             </div>
             <DialogFooter>
