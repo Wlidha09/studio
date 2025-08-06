@@ -97,7 +97,7 @@ export default function LoginPage() {
             <Card className="w-full max-w-sm">
                 <CardHeader className="text-center">
                     <div className="flex justify-center items-center mb-4">
-                        <Briefcase className="h-8 w-8 mr-3 text-primary" />
+                        <Briefcase className="h-8 w-8 mr-3 text-logo" />
                         <CardTitle className="text-2xl font-bold">HResource</CardTitle>
                     </div>
                     <CardDescription>

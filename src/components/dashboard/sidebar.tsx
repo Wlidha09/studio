@@ -124,7 +124,7 @@ export default function DashboardSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <Briefcase className="w-8 h-8 text-primary" />
+          <Briefcase className="w-8 h-8 text-logo" />
           <h2 className="font-headline text-2xl font-semibold text-sidebar-foreground">
             HResource
           </h2>
