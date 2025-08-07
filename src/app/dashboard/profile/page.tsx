@@ -60,6 +60,18 @@ export default function ProfilePage() {
                           />
                       </div>
                       <div className="space-y-2">
+                          <Label htmlFor="emailDisplay">Email</Label>
+                          <Input
+                              id="emailDisplay"
+                              name="emailDisplay"
+                              type="email"
+                              value={employee.email || ""}
+                              readOnly
+                              disabled
+                              className="bg-muted"
+                          />
+                      </div>
+                      <div className="space-y-2">
                           <Label htmlFor="birthDate">Birth Date</Label>
                           <Input
                               id="birthDate"
