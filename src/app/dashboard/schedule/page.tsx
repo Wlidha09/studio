@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
 import { useAuth } from '@/contexts/auth-context';
 import { addWorkSchedule } from '@/lib/firestore';
-import { Loader2 } from 'lucide-react';
+import { List, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SchedulePage() {
   const { toast } = useToast();
@@ -23,22 +24,20 @@ export default function SchedulePage() {
   const nextWeekDays = eachDayOfInterval({ start: startOfNextWeek, end: endOfNextWeek });
 
   const handleDayClick = (day: Date) => {
-    setSelectedDays(currentSelectedDays => {
-      const isAlreadySelected = currentSelectedDays.some(d => isSameDay(d, day));
-      if (isAlreadySelected) {
-        return currentSelectedDays.filter(d => !isSameDay(d, day));
-      }
-      if (currentSelectedDays.length < 3) {
-        return [...currentSelectedDays, day];
+    const isAlreadySelected = selectedDays.some(d => isSameDay(d, day));
+    if (isAlreadySelected) {
+      setSelectedDays(currentSelectedDays => currentSelectedDays.filter(d => !isSameDay(d, day)));
+    } else {
+      if (selectedDays.length < 3) {
+        setSelectedDays(currentSelectedDays => [...currentSelectedDays, day]);
       } else {
         toast({
           title: "Selection Limit Reached",
           description: "You can only select up to 3 days.",
           variant: "destructive",
         });
-        return currentSelectedDays;
       }
-    });
+    }
   };
 
   const handleSubmit = async () => {
@@ -86,11 +85,19 @@ export default function SchedulePage() {
 
   return (
     <Card>
-        <CardHeader>
-            <CardTitle className="font-headline text-2xl">Weekly Schedule</CardTitle>
-            <CardDescription>
-                Select your preferred work days for next week. You can select up to 3 days.
-            </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle className="font-headline text-2xl">Weekly Schedule</CardTitle>
+                <CardDescription>
+                    Select your preferred work days for next week. You can select up to 3 days.
+                </CardDescription>
+            </div>
+             <Button asChild variant="outline">
+                <Link href="/dashboard/work-schedules">
+                    <List className="mr-2 h-4 w-4" />
+                    View All Schedules
+                </Link>
+            </Button>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
              <WeeklyCalendar 
