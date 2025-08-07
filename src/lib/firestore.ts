@@ -4,7 +4,7 @@
 import { db } from './firebase';
 import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
-import type { Employee, Candidate, Department, LeaveRequest, Holiday } from './types';
+import type { Employee, Candidate, Department, LeaveRequest, Holiday, WorkSchedule } from './types';
 
 // Helper function to convert Firestore Timestamps to strings
 const convertDocTimestamps = (doc: any) => {
@@ -217,4 +217,16 @@ export async function deleteHoliday(id: string): Promise<void> {
 export async function updateHolidayPaidStatus(id: string, paid: boolean): Promise<void> {
     const docRef = doc(db, 'holidays', id);
     await updateDoc(docRef, { paid });
+}
+
+// Work Schedule Functions
+export async function getWorkSchedules(): Promise<WorkSchedule[]> {
+    const querySnapshot = await getDocs(collection(db, 'workSchedules'));
+    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as WorkSchedule);
+}
+
+export async function addWorkSchedule(schedule: Omit<WorkSchedule, 'id'>): Promise<WorkSchedule> {
+  const docRef = await addDoc(collection(db, 'workSchedules'), { ...schedule, createdAt: serverTimestamp() });
+  const newDoc = await getDoc(docRef);
+  return convertDocTimestamps(newDoc) as WorkSchedule;
 }

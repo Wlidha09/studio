@@ -43,3 +43,11 @@ export type Holiday = {
     date: string; // YYYY-MM-DD
     paid: boolean;
 };
+
+export type WorkSchedule = {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  dates: string[]; // YYYY-MM-DD format
+  submissionDate: string;
+}

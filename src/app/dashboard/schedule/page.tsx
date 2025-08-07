@@ -7,9 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
+import { useAuth } from '@/contexts/auth-context';
+import { addWorkSchedule } from '@/lib/firestore';
 
 export default function SchedulePage() {
   const { toast } = useToast();
+  const { employee } = useAuth();
   const [selectedDays, setSelectedDays] = useState<Date[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,18 +49,39 @@ export default function SchedulePage() {
         });
         return;
     }
+    if (!employee) {
+        toast({
+            title: "Not Authenticated",
+            description: "Could not identify the current user.",
+            variant: "destructive",
+        });
+        return;
+    }
 
     setIsSubmitting(true);
-    // In a real app, you would save this to a database.
-    // For this demo, we'll just show a success message.
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-
-    toast({
-        title: "Schedule Submitted!",
-        description: `Your preferred days for next week have been saved: ${selectedDays.map(d => format(d, 'EEE, MMM d')).join(', ')}.`,
-    });
-    setSelectedDays([]); // Reset selection after submit
+    try {
+        const scheduleData = {
+            employeeId: employee.id,
+            employeeName: employee.name,
+            dates: selectedDays.map(d => format(d, 'yyyy-MM-dd')),
+            submissionDate: format(new Date(), 'yyyy-MM-dd')
+        };
+        await addWorkSchedule(scheduleData);
+        toast({
+            title: "Schedule Submitted!",
+            description: `Your preferred days for next week have been saved.`,
+        });
+        setSelectedDays([]); // Reset selection after submit
+    } catch (error) {
+        console.error("Failed to save schedule", error);
+        toast({
+            title: "Submission Failed",
+            description: "Could not save your schedule. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (

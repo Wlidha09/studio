@@ -8,6 +8,7 @@ export const pages = {
     attendance: "Attendance",
     tickets: "Tickets",
     schedule: "Schedule",
+    'work-schedules': "Work Schedules",
     'job-description-generator': "AI Job Generator",
     roles: "Roles",
     'seed-database': "Seed Database",
