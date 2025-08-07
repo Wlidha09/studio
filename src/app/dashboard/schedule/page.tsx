@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO, getDay } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -83,20 +83,54 @@ export default function SchedulePage() {
   const { employee } = useAuth();
   const [selectedDays, setSelectedDays] = useState<Date[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   
   const [weekToShow, setWeekToShow] = useState<Date[]>([]);
 
   useEffect(() => {
     const today = new Date();
-    // Start of next week (assuming week starts on Monday)
     const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const endOfNextWeek = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const nextWeekDays = eachDayOfInterval({ start: startOfNextWeek, end: endOfNextWeek });
     setWeekToShow(nextWeekDays);
   }, []);
 
+   useEffect(() => {
+    async function fetchUserSchedule() {
+      if (employee && weekToShow.length > 0) {
+        const allSchedules = await getWorkSchedules();
+        const nextWeekStartString = format(weekToShow[0], 'yyyy-MM-dd');
+
+        const userScheduleForNextWeek = allSchedules.find(s => 
+          s.employeeId === employee.id &&
+          s.dates.some(d => {
+              const scheduleWeekStart = startOfWeek(parseISO(d), { weekStartsOn: 1 });
+              return format(scheduleWeekStart, 'yyyy-MM-dd') === nextWeekStartString;
+          })
+        );
+        
+        if (userScheduleForNextWeek) {
+          setSelectedDays(userScheduleForNextWeek.dates.map(d => parseISO(d)));
+          setHasSubmitted(true);
+        } else {
+          setSelectedDays([]);
+          setHasSubmitted(false);
+        }
+      }
+    }
+    fetchUserSchedule();
+  }, [employee, weekToShow]);
+
 
   const handleDayClick = (day: Date) => {
+    if(hasSubmitted) {
+        toast({
+            title: "Already Submitted",
+            description: "You have already submitted your schedule for this week.",
+            variant: "destructive"
+        });
+        return;
+    }
     const isAlreadySelected = selectedDays.some(d => isSameDay(d, day));
     if (isAlreadySelected) {
       setSelectedDays(currentSelectedDays => currentSelectedDays.filter(d => !isSameDay(d, day)));
@@ -140,6 +174,7 @@ export default function SchedulePage() {
             submissionDate: format(new Date(), 'yyyy-MM-dd')
         };
         await addWorkSchedule(scheduleData);
+        setHasSubmitted(true);
         toast({
             title: "Schedule Submitted!",
             description: `Your preferred days for next week have been saved.`,
@@ -178,21 +213,23 @@ export default function SchedulePage() {
                         onDayClick={handleDayClick}
                     />
                     <div className='text-center text-sm text-muted-foreground'>
-                        {selectedDays.length > 0 
+                        { hasSubmitted 
+                           ? `You have submitted your schedule for this week.`
+                           : selectedDays.length > 0 
                             ? `You have selected ${selectedDays.length} day(s).`
                             : "Please pick up to 3 days."
                         }
                     </div>
                 </div>
                  <CardFooter className="flex justify-end mt-4">
-                    <Button onClick={handleSubmit} disabled={isSubmitting || selectedDays.length === 0}>
+                    <Button onClick={handleSubmit} disabled={isSubmitting || selectedDays.length === 0 || hasSubmitted}>
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Submitting...
                             </>
                         ) : (
-                            'Submit Schedule'
+                            hasSubmitted ? 'Submitted' : 'Submit Schedule'
                         )}
                     </Button>
                 </CardFooter>
