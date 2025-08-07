@@ -11,6 +11,7 @@ import { Briefcase, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { FirebaseError } from "firebase/app";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -29,6 +30,35 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isRegisterMode, setIsRegisterMode] = useState(false);
+    const [unauthorizedDomainError, setUnauthorizedDomainError] = useState(false);
+
+    const handleAuthError = (error: any) => {
+        const firebaseError = error as FirebaseError;
+        let description = "An unexpected error occurred. Please try again.";
+
+        if (firebaseError.code === "auth/unauthorized-domain") {
+            setUnauthorizedDomainError(true);
+            return;
+        }
+
+        setUnauthorizedDomainError(false);
+
+        if (isRegisterMode) {
+            if (firebaseError.code === "auth/email-already-in-use") {
+                description = "This email is already in use. Please sign in or use a different email.";
+            }
+        } else {
+            if (firebaseError.code === "auth/wrong-password" || firebaseError.code === "auth/user-not-found" || firebaseError.code === 'auth/invalid-credential') {
+                description = "Invalid email or password. Please try again.";
+            }
+        }
+
+        toast({
+            title: isRegisterMode ? "Registration Failed" : "Login Failed",
+            description: description,
+            variant: "destructive",
+        });
+    }
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -41,33 +71,10 @@ export default function LoginPage() {
             if (user) {
                 router.push("/dashboard");
             } else {
-                 toast({
-                    title: isRegisterMode ? "Registration Failed" : "Login Failed",
-                    description: isRegisterMode 
-                        ? "Could not create an account. Please try again."
-                        : "Please check your email and password.",
-                    variant: "destructive",
-                });
+                 handleAuthError({code: 'auth/generic-error'});
             }
-        } catch (error: any) {
-            const firebaseError = error as FirebaseError;
-            let description = "An unexpected error occurred. Please try again.";
-
-            if (isRegisterMode) {
-                if (firebaseError.code === "auth/email-already-in-use") {
-                    description = "This email is already in use. Please sign in or use a different email.";
-                }
-            } else {
-                if (firebaseError.code === "auth/wrong-password" || firebaseError.code === "auth/user-not-found" || firebaseError.code === 'auth/invalid-credential') {
-                    description = "Invalid email or password. Please try again.";
-                }
-            }
-
-            toast({
-                title: isRegisterMode ? "Registration Failed" : "Login Failed",
-                description: description,
-                variant: "destructive",
-            });
+        } catch (error) {
+            handleAuthError(error);
         } finally {
             setIsLoading(false);
         }
@@ -81,12 +88,7 @@ export default function LoginPage() {
                 router.push("/dashboard");
             }
         } catch (error) {
-            console.error("Login failed:", error);
-            toast({
-                title: "Login Failed",
-                description: "Could not sign in with Google. Please try again.",
-                variant: "destructive",
-            });
+            handleAuthError(error);
         } finally {
             setIsGoogleLoading(false);
         }
@@ -106,6 +108,14 @@ export default function LoginPage() {
                 </CardHeader>
                 <form onSubmit={handleFormSubmit}>
                     <CardContent className="space-y-4">
+                        {unauthorizedDomainError && (
+                            <Alert variant="destructive">
+                                <AlertTitle>Configuration Required</AlertTitle>
+                                <AlertDescription>
+                                    Your app's domain is not authorized. To fix this, go to the Firebase Console, navigate to Authentication &gt; Settings &gt; Authorized domains, and add 'localhost'.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
