@@ -1,16 +1,82 @@
 
 "use client";
 
-import { useState } from 'react';
-import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
 import { useAuth } from '@/contexts/auth-context';
-import { addWorkSchedule } from '@/lib/firestore';
-import { List, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { addWorkSchedule, getWorkSchedules } from '@/lib/firestore';
+import { Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import type { WorkSchedule } from "@/lib/types";
+
+
+function AllSchedulesTable() {
+    const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchSchedules() {
+            try {
+                const fetchedSchedules = await getWorkSchedules();
+                 const sortedSchedules = [...fetchedSchedules].sort((a, b) => 
+                    new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()
+                );
+                setSchedules(sortedSchedules);
+            } catch (error) {
+                console.error("Failed to fetch work schedules", error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchSchedules();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    return (
+        <div className="border rounded-lg">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Employee Name</TableHead>
+                        <TableHead>Selected Days</TableHead>
+                        <TableHead>Submission Date</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {schedules.map((schedule) => (
+                        <TableRow key={schedule.id}>
+                            <TableCell className="font-medium">{schedule.employeeName}</TableCell>
+                            <TableCell>
+                                <div className="flex flex-wrap gap-2">
+                                    {schedule.dates.map(date => (
+                                        <Badge key={date} variant="secondary">
+                                            {format(parseISO(date), "EEE, MMM d")}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </TableCell>
+                            <TableCell>{format(parseISO(schedule.submissionDate), "MMMM d, yyyy")}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    )
+}
+
 
 export default function SchedulePage() {
   const { toast } = useToast();
@@ -84,46 +150,51 @@ export default function SchedulePage() {
   }
 
   return (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle className="font-headline text-2xl">Weekly Schedule</CardTitle>
-                <CardDescription>
-                    Select your preferred work days for next week. You can select up to 3 days.
-                </CardDescription>
-            </div>
-             <Button asChild variant="outline">
-                <Link href="/dashboard/work-schedules">
-                    <List className="mr-2 h-4 w-4" />
-                    View All Schedules
-                </Link>
-            </Button>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-             <WeeklyCalendar 
-                week={nextWeekDays}
-                selectedDays={selectedDays}
-                onDayClick={handleDayClick}
-             />
-             <div className='text-center text-sm text-muted-foreground'>
-                {selectedDays.length > 0 
-                    ? `You have selected ${selectedDays.length} day(s).`
-                    : "Please pick up to 3 days."
-                }
-             </div>
-        </CardContent>
-        <CardFooter className="flex justify-end">
-            <Button onClick={handleSubmit} disabled={isSubmitting || selectedDays.length === 0}>
-                {isSubmitting ? (
-                    <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                    </>
-                ) : (
-                    'Submit Schedule'
-                )}
-            </Button>
-        </CardFooter>
-    </Card>
+    <Tabs defaultValue="my-schedule">
+      <Card>
+          <CardHeader>
+              <CardTitle className="font-headline text-2xl">Weekly Schedule</CardTitle>
+              <CardDescription>
+                  Select your preferred work days for next week or view all submitted schedules.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TabsList className="mb-4">
+                <TabsTrigger value="my-schedule">My Schedule</TabsTrigger>
+                <TabsTrigger value="all-schedules">All Schedules</TabsTrigger>
+            </TabsList>
+            <TabsContent value="my-schedule">
+                <div className="flex flex-col items-center gap-4">
+                    <WeeklyCalendar 
+                        week={nextWeekDays}
+                        selectedDays={selectedDays}
+                        onDayClick={handleDayClick}
+                    />
+                    <div className='text-center text-sm text-muted-foreground'>
+                        {selectedDays.length > 0 
+                            ? `You have selected ${selectedDays.length} day(s).`
+                            : "Please pick up to 3 days."
+                        }
+                    </div>
+                </div>
+                 <CardFooter className="flex justify-end mt-4">
+                    <Button onClick={handleSubmit} disabled={isSubmitting || selectedDays.length === 0}>
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Submitting...
+                            </>
+                        ) : (
+                            'Submit Schedule'
+                        )}
+                    </Button>
+                </CardFooter>
+            </TabsContent>
+            <TabsContent value="all-schedules">
+                <AllSchedulesTable />
+            </TabsContent>
+          </CardContent>
+      </Card>
+    </Tabs>
   );
 }
