@@ -27,6 +27,7 @@ import {
   Database,
   ClipboardCheck,
   ShieldAlert,
+  CalendarPlus,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -85,6 +86,12 @@ const menuItems = [
     icon: ClipboardCheck,
     label: "Tickets",
     pageKey: "tickets" as PageKey,
+  },
+  {
+    href: "/dashboard/schedule",
+    icon: CalendarPlus,
+    label: "Schedule",
+    pageKey: "schedule" as PageKey,
   },
   {
     href: "/dashboard/job-description-generator",
