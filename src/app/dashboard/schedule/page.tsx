@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO, getDay } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -88,13 +88,11 @@ export default function SchedulePage() {
 
   useEffect(() => {
     const today = new Date();
-    const currentDayOfWeek = getDay(today); // Sunday is 0, Monday is 1, ..., Saturday is 6
-    const daysToAdd = currentDayOfWeek >= 4 ? 14 : 7; // If it's Thursday or later, show the week after next.
-
-    const startOfTargetWeek = startOfWeek(addDays(today, daysToAdd), { weekStartsOn: 1 });
-    const endOfTargetWeek = endOfWeek(addDays(today, daysToAdd), { weekStartsOn: 1 });
-    const targetWeekDays = eachDayOfInterval({ start: startOfTargetWeek, end: endOfTargetWeek });
-    setWeekToShow(targetWeekDays);
+    // Start of next week (assuming week starts on Monday)
+    const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+    const endOfNextWeek = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+    const nextWeekDays = eachDayOfInterval({ start: startOfNextWeek, end: endOfNextWeek });
+    setWeekToShow(nextWeekDays);
   }, []);
 
 
