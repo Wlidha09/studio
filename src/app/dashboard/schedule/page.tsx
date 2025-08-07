@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { addDays, startOfWeek, endOfWeek, format } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,7 @@ export default function SchedulePage() {
         description: "You can only select up to 3 days.",
         variant: "destructive",
       });
-      setDays(days);
+      // Do not update days state if selection exceeds limit
     } else {
       setDays(selectedDays);
     }
@@ -53,6 +53,7 @@ export default function SchedulePage() {
                 footer={footer}
                 showOutsideDays={false}
                 fixedWeeks
+                disableNavigation
             />
         </CardContent>
     </Card>
