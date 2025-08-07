@@ -2,36 +2,40 @@
 "use client";
 
 import { useState } from 'react';
-import { addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
 
 export default function SchedulePage() {
   const { toast } = useToast();
-  const [days, setDays] = useState<Date[] | undefined>();
+  const [selectedDays, setSelectedDays] = useState<Date[]>([]);
 
   const today = new Date();
   const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
   const endOfNextWeek = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+  const nextWeekDays = eachDayOfInterval({ start: startOfNextWeek, end: endOfNextWeek });
 
-  const handleSelect = (selectedDays: Date[] | undefined) => {
-    if (selectedDays && selectedDays.length > 3) {
-      toast({
-        title: "Selection Limit Reached",
-        description: "You can only select up to 3 days.",
-        variant: "destructive",
-      });
-      // Do not update days state if selection exceeds limit
-    } else {
-      setDays(selectedDays);
-    }
+  const handleDayClick = (day: Date) => {
+    setSelectedDays(currentSelectedDays => {
+      const isAlreadySelected = currentSelectedDays.some(d => isSameDay(d, day));
+      if (isAlreadySelected) {
+        return currentSelectedDays.filter(d => !isSameDay(d, day));
+      }
+      if (currentSelectedDays.length < 3) {
+        return [...currentSelectedDays, day];
+      } else {
+        toast({
+          title: "Selection Limit Reached",
+          description: "You can only select up to 3 days.",
+          variant: "destructive",
+        });
+        return currentSelectedDays;
+      }
+    });
   };
-
-  let footer = <p>Please pick up to 3 days.</p>;
-  if (days && days.length > 0) {
-    footer = <p>You selected {days.length} day(s).</p>;
-  }
 
   return (
     <Card>
@@ -41,21 +45,20 @@ export default function SchedulePage() {
                 Select your preferred work days for next week. You can select up to 3 days.
             </CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center">
-             <Calendar
-                mode="multiple"
-                selected={days}
-                onSelect={handleSelect}
-                fromDate={startOfNextWeek}
-                toDate={endOfNextWeek}
-                defaultMonth={startOfNextWeek}
-                className="rounded-md border"
-                footer={footer}
-                showOutsideDays={false}
-                fixedWeeks
-                disableNavigation
-            />
+        <CardContent className="flex flex-col items-center gap-4">
+             <WeeklyCalendar 
+                week={nextWeekDays}
+                selectedDays={selectedDays}
+                onDayClick={handleDayClick}
+             />
+             <div className='text-center text-sm text-muted-foreground'>
+                {selectedDays.length > 0 
+                    ? `You have selected ${selectedDays.length} day(s).`
+                    : "Please pick up to 3 days."
+                }
+             </div>
         </CardContent>
     </Card>
   );
 }
+
