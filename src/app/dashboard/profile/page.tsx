@@ -21,8 +21,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-bold">Hello World</h1>
+    <div className="space-y-6">
       <div className="flex justify-center items-start py-8">
         <Card className="w-full max-w-2xl">
           <CardHeader>
