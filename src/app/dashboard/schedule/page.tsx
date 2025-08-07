@@ -3,15 +3,15 @@
 
 import { useState } from 'react';
 import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
 
 export default function SchedulePage() {
   const { toast } = useToast();
   const [selectedDays, setSelectedDays] = useState<Date[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date();
   const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
@@ -37,6 +37,29 @@ export default function SchedulePage() {
     });
   };
 
+  const handleSubmit = async () => {
+    if (selectedDays.length === 0) {
+        toast({
+            title: "No days selected",
+            description: "Please select at least one day.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    setIsSubmitting(true);
+    // In a real app, you would save this to a database.
+    // For this demo, we'll just show a success message.
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+
+    toast({
+        title: "Schedule Submitted!",
+        description: `Your preferred days for next week have been saved: ${selectedDays.map(d => format(d, 'EEE, MMM d')).join(', ')}.`,
+    });
+    setSelectedDays([]); // Reset selection after submit
+  }
+
   return (
     <Card>
         <CardHeader>
@@ -58,7 +81,11 @@ export default function SchedulePage() {
                 }
              </div>
         </CardContent>
+        <CardFooter className="flex justify-end">
+            <Button onClick={handleSubmit} disabled={isSubmitting || selectedDays.length === 0}>
+                {isSubmitting ? 'Submitting...' : 'Submit Schedule'}
+            </Button>
+        </CardFooter>
     </Card>
   );
 }
-
