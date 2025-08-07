@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
 import { useAuth } from '@/contexts/auth-context';
 import { addWorkSchedule } from '@/lib/firestore';
+import { Loader2 } from 'lucide-react';
 
 export default function SchedulePage() {
   const { toast } = useToast();
@@ -106,7 +107,14 @@ export default function SchedulePage() {
         </CardContent>
         <CardFooter className="flex justify-end">
             <Button onClick={handleSubmit} disabled={isSubmitting || selectedDays.length === 0}>
-                {isSubmitting ? 'Submitting...' : 'Submit Schedule'}
+                {isSubmitting ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                    </>
+                ) : (
+                    'Submit Schedule'
+                )}
             </Button>
         </CardFooter>
     </Card>
