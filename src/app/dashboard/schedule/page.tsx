@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, parseISO, getDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -144,7 +144,6 @@ export default function SchedulePage() {
             title: "Schedule Submitted!",
             description: `Your preferred days for next week have been saved.`,
         });
-        setSelectedDays([]); // Clear selection after successful submission
     } catch (error) {
         console.error("Failed to save schedule", error);
         toast({
