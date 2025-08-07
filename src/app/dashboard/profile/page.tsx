@@ -32,7 +32,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-8">
             <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
-                    <AvatarImage src={`https://placehold.co/96x96.png?text=${employee.name.charAt(0)}`} alt={employee.name} />
+                    <AvatarImage src={`https://placehold.co/96x96.png?text=${employee.name.charAt(0)}`} alt={employee.name} data-ai-hint="avatar person" />
                     <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="grid gap-1.5">
