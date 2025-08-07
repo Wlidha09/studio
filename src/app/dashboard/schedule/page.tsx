@@ -137,6 +137,7 @@ export default function SchedulePage() {
             title: "Schedule Submitted!",
             description: `Your preferred days for next week have been saved.`,
         });
+        setSelectedDays([]); // Clear selection after successful submission
     } catch (error) {
         console.error("Failed to save schedule", error);
         toast({
