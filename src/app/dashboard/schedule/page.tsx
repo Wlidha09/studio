@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,7 +6,6 @@ import { addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import type { DateRange } from 'react-day-picker';
 
 export default function SchedulePage() {
   const { toast } = useToast();
@@ -52,6 +52,8 @@ export default function SchedulePage() {
                 toDate={endOfWeek(nextWeek, { weekStartsOn: 1})}
                 className="rounded-md border"
                 footer={footer}
+                showOutsideDays={false}
+                disableNavigation
             />
         </CardContent>
     </Card>
