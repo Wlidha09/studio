@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,9 @@ export default function SchedulePage() {
   const { toast } = useToast();
   const [days, setDays] = useState<Date[] | undefined>();
 
-  const nextWeek = startOfWeek(addDays(new Date(), 7), { weekStartsOn: 1 });
+  const today = new Date();
+  const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+  const endOfNextWeek = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
 
   const handleSelect = (selectedDays: Date[] | undefined) => {
     if (selectedDays && selectedDays.length > 3) {
@@ -20,40 +22,37 @@ export default function SchedulePage() {
         description: "You can only select up to 3 days.",
         variant: "destructive",
       });
-      // Keep the previous selection
       setDays(days);
     } else {
       setDays(selectedDays);
     }
   };
 
-  let footer = <p>Please pick one or more days.</p>;
+  let footer = <p>Please pick up to 3 days.</p>;
   if (days && days.length > 0) {
     footer = <p>You selected {days.length} day(s).</p>;
   }
 
-
   return (
     <Card>
         <CardHeader>
-            <CardTitle className="font-headline text-2xl">Schedule</CardTitle>
+            <CardTitle className="font-headline text-2xl">Weekly Schedule</CardTitle>
             <CardDescription>
-                Select up to 3 days from next week's calendar.
+                Select your preferred work days for next week. You can select up to 3 days.
             </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
              <Calendar
                 mode="multiple"
-                min={3}
                 selected={days}
                 onSelect={handleSelect}
-                defaultMonth={nextWeek}
-                fromDate={nextWeek}
-                toDate={endOfWeek(nextWeek, { weekStartsOn: 1})}
+                fromDate={startOfNextWeek}
+                toDate={endOfNextWeek}
+                defaultMonth={startOfNextWeek}
                 className="rounded-md border"
                 footer={footer}
                 showOutsideDays={false}
-                disableNavigation
+                fixedWeeks
             />
         </CardContent>
     </Card>
