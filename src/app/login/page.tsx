@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInWithGoogle, signInWithEmail, createUserWithEmail } from "@/lib/auth";
-import { Briefcase, Loader2 } from "lucide-react";
+import { Briefcase, Loader2, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { FirebaseError } from "firebase/app";
@@ -105,49 +105,56 @@ export default function LoginPage() {
                         {isRegisterMode ? "Create an account to get started" : "Sign in to access your dashboard"}
                     </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleFormSubmit}>
-                    <CardContent className="space-y-4">
-                        {authError?.code === "auth/unauthorized-domain" && (
-                            <Alert variant="destructive">
-                                <AlertTitle>Configuration Required</AlertTitle>
-                                <AlertDescription>
-                                    Your app's domain is not authorized. To fix this, go to the Firebase Console, navigate to Authentication &gt; Settings &gt; Authorized domains, and add 'localhost'.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                             {isRegisterMode ? "Register" : "Sign In"}
-                        </Button>
-                         <Button type="button" variant="link" onClick={() => setIsRegisterMode(!isRegisterMode)}>
-                            {isRegisterMode ? "Already have an account? Sign In" : "Don't have an account? Register"}
-                        </Button>
-                        <div className="relative w-full">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
+                <CardContent className="space-y-4">
+                    {authError?.code === "auth/unauthorized-domain" && (
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Action Required: Unauthorized Domain</AlertTitle>
+                            <AlertDescription>
+                                This app's domain is not authorized for Firebase Authentication.
+                                <br /><br />
+                                To fix this, open your <strong>Firebase Console</strong>, navigate to <strong>Authentication &gt; Settings &gt; Authorized domains</strong>, and add <strong>localhost</strong> to the list.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    <form onSubmit={handleFormSubmit}>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
                             </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">
-                                Or continue with
-                                </span>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                             </div>
                         </div>
-                        <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button" disabled={isGoogleLoading}>
-                            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> :  <GoogleIcon className="mr-2 h-5 w-5" />}
-                            Continue with Google
-                        </Button>
-                    </CardFooter>
-                </form>
+                        <CardFooter className="flex flex-col gap-4 pt-6 px-0">
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {isRegisterMode ? "Register" : "Sign In"}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4 pt-0">
+                        <Button type="button" variant="link" onClick={() => setIsRegisterMode(!isRegisterMode)}>
+                        {isRegisterMode ? "Already have an account? Sign In" : "Don't have an account? Register"}
+                    </Button>
+                    <div className="relative w-full">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                            Or continue with
+                            </span>
+                        </div>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button" disabled={isGoogleLoading}>
+                        {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> :  <GoogleIcon className="mr-2 h-5 w-5" />}
+                        Continue with Google
+                    </Button>
+                </CardFooter>
             </Card>
         </div>
     );
