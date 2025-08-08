@@ -130,7 +130,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarImage src={`https://placehold.co/40x40.png?text=${employee.name.charAt(0)}`} />
+                      <AvatarImage src={employee.avatar} alt={employee.name} />
                       <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>

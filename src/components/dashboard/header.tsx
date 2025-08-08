@@ -64,7 +64,7 @@ export default function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={`https://placehold.co/40x40.png?text=${employee?.name.charAt(0)}`} alt={employee?.name} />
+                <AvatarImage src={employee?.avatar} alt={employee?.name} />
                 <AvatarFallback>{employee?.name.charAt(0)}</AvatarFallback>
               </Avatar>
             </Button>
