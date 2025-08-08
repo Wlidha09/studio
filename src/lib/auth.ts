@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthProvider } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthProvider, getRedirectResult } from "firebase/auth";
 import { app } from "./firebase";
 
 const auth = getAuth(app);
@@ -21,12 +21,12 @@ export async function signInWithGoogle(): Promise<User | null> {
     }
 }
 
-export async function signInWithPopupGeneric(provider: AuthProvider): Promise<User | null> {
+export async function signInWithProvider(provider: AuthProvider): Promise<User | null> {
     try {
-        const result = await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider)
         return result.user;
     } catch (error) {
-        console.error("Error with popup sign-in: ", error);
+        console.error("Error signing in with popup: ", error);
         throw error;
     }
 }
@@ -61,4 +61,25 @@ export async function signOut() {
 
 export function onAuthStateChanged(callback: (user: User | null) => void) {
     return auth.onAuthStateChanged(callback);
+}
+
+export async function handleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken;
+      const user = result.user;
+      console.log("User from redirect:", user, "with token:", token);
+      return user;
+    }
+    return null;
+  } catch(error) {
+    const errorCode = (error as any).code;
+    const errorMessage = (error as any).message;
+    const email = (error as any).customData?.email;
+    const credential = GoogleAuthProvider.credentialFromError(error as any);
+    console.error("Error from redirect result:", errorCode, errorMessage, email, credential);
+    throw error;
+  }
 }
