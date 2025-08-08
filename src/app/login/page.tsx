@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { FirebaseError } from "firebase/app";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getEmployeeByEmail, addEmployee } from "@/lib/firestore";
+import { format } from "date-fns";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -100,7 +102,21 @@ export default function LoginPage() {
             const user = await signInWithGoogle();
             if (user) {
                 if(user.email?.endsWith(`@${ALLOWED_DOMAIN}`)) {
-                     router.push("/dashboard");
+                    const existingEmployee = await getEmployeeByEmail(user.email);
+                    if (!existingEmployee) {
+                        // Create a new employee if one doesn't exist
+                        await addEmployee({
+                            name: user.displayName || 'New User',
+                            email: user.email,
+                            role: 'Employee',
+                            department: 'Unassigned',
+                            avatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.email.charAt(0)}`,
+                            hireDate: format(new Date(), 'yyyy-MM-dd'),
+                            birthDate: '' 
+                        });
+                        toast({ title: "Welcome!", description: "Your employee profile has been created." });
+                    }
+                    router.push("/dashboard");
                 } else {
                     toast({
                         title: "Invalid Domain",
@@ -182,3 +198,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
+    
