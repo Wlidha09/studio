@@ -45,6 +45,8 @@ export default function LoginPage() {
         } else {
             if (firebaseError.code === "auth/wrong-password" || firebaseError.code === "auth/user-not-found" || firebaseError.code === 'auth/invalid-credential') {
                 description = "Invalid email or password. Please try again.";
+            } else if (firebaseError.code === 'auth/user-disabled') {
+                description = "This user account has been disabled by an administrator.";
             }
         }
         
@@ -159,3 +161,4 @@ export default function LoginPage() {
         </div>
     );
 }
+
