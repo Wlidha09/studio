@@ -22,6 +22,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 )
 
+const ALLOWED_DOMAIN = "contractor.atolls.com";
+
+
 export default function LoginPage() {
     const router = useRouter();
     const { toast } = useToast();
@@ -61,6 +64,16 @@ export default function LoginPage() {
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+            toast({
+                title: "Invalid Domain",
+                description: `Access is restricted to users with a "@${ALLOWED_DOMAIN}" email address.`,
+                variant: "destructive",
+            });
+            return;
+        }
+        
         setIsLoading(true);
         setAuthError(null);
         try {
@@ -86,7 +99,15 @@ export default function LoginPage() {
         try {
             const user = await signInWithGoogle();
             if (user) {
-                router.push("/dashboard");
+                if(user.email?.endsWith(`@${ALLOWED_DOMAIN}`)) {
+                     router.push("/dashboard");
+                } else {
+                    toast({
+                        title: "Invalid Domain",
+                        description: `Access is restricted to users with a "@${ALLOWED_DOMAIN}" email address.`,
+                        variant: "destructive",
+                    });
+                }
             }
         } catch (error) {
             handleAuthError(error);
@@ -161,4 +182,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
