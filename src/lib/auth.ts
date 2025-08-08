@@ -7,7 +7,7 @@ import { app } from "./firebase";
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
-  'webClientId': '913952811592-7rmagrurc80vs2404g01d028btblicra.apps.googleusercontent.com'
+  'webClientId': '591491822516-suo3r7a8l4efq46cih28u2k0426kpp7g.apps.googleusercontent.com'
 });
 
 
