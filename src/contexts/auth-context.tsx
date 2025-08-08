@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged } from '@/lib/auth';
-import { getEmployeeByEmail } from '@/lib/firestore';
+import { getEmployeeByEmail, updateEmployee } from '@/lib/firestore';
 import type { User } from 'firebase/auth';
 import type { Employee } from '@/lib/types';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,10 +29,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       if (user) {
         try {
-          const employeeData = await getEmployeeByEmail(user.email!);
+          let employeeData = await getEmployeeByEmail(user.email!);
+          
+          if (employeeData) {
+            // Check if profile info needs updating
+            const nameNeedsUpdate = user.displayName && user.displayName !== employeeData.name;
+            const avatarNeedsUpdate = user.photoURL && user.photoURL !== employeeData.avatar;
+
+            if (nameNeedsUpdate || avatarNeedsUpdate) {
+              const updatedInfo: Partial<Employee> = {};
+              if (nameNeedsUpdate) updatedInfo.name = user.displayName!;
+              if (avatarNeedsUpdate) updatedInfo.avatar = user.photoURL!;
+
+              const updatedEmployee = { ...employeeData, ...updatedInfo };
+              await updateEmployee(updatedEmployee);
+              employeeData = updatedEmployee; // Use the updated data
+            }
+          }
+          
           setEmployee(employeeData);
         } catch (error) {
-            console.error("Failed to fetch employee data", error);
+            console.error("Failed to fetch or update employee data", error);
             setEmployee(null);
         }
       } else {
