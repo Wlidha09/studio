@@ -6,6 +6,10 @@ import { app } from "./firebase";
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({
+  'webClientId': '913952811592-7rmagrurc80vs2404g01d028btblicra.apps.googleusercontent.com'
+});
+
 
 export async function signInWithGoogle(): Promise<User | null> {
     try {
@@ -13,7 +17,7 @@ export async function signInWithGoogle(): Promise<User | null> {
         return result.user;
     } catch (error) {
         console.error("Error signing in with Google: ", error);
-        return null;
+        throw error;
     }
 }
 

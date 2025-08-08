@@ -30,18 +30,13 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isRegisterMode, setIsRegisterMode] = useState(false);
-    const [unauthorizedDomainError, setUnauthorizedDomainError] = useState(false);
+    const [authError, setAuthError] = useState<FirebaseError | null>(null);
 
     const handleAuthError = (error: any) => {
         const firebaseError = error as FirebaseError;
+        setAuthError(firebaseError);
+
         let description = "An unexpected error occurred. Please try again.";
-
-        if (firebaseError.code === "auth/unauthorized-domain") {
-            setUnauthorizedDomainError(true);
-            return;
-        }
-
-        setUnauthorizedDomainError(false);
 
         if (isRegisterMode) {
             if (firebaseError.code === "auth/email-already-in-use") {
@@ -52,17 +47,20 @@ export default function LoginPage() {
                 description = "Invalid email or password. Please try again.";
             }
         }
-
-        toast({
-            title: isRegisterMode ? "Registration Failed" : "Login Failed",
-            description: description,
-            variant: "destructive",
-        });
+        
+        if (firebaseError.code !== "auth/unauthorized-domain") {
+            toast({
+                title: isRegisterMode ? "Registration Failed" : "Login Failed",
+                description: description,
+                variant: "destructive",
+            });
+        }
     }
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsLoading(true);
+        setAuthError(null);
         try {
             const user = isRegisterMode 
                 ? await createUserWithEmail(email, password)
@@ -82,6 +80,7 @@ export default function LoginPage() {
 
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
+        setAuthError(null);
         try {
             const user = await signInWithGoogle();
             if (user) {
@@ -108,7 +107,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <form onSubmit={handleFormSubmit}>
                     <CardContent className="space-y-4">
-                        {unauthorizedDomainError && (
+                        {authError?.code === "auth/unauthorized-domain" && (
                             <Alert variant="destructive">
                                 <AlertTitle>Configuration Required</AlertTitle>
                                 <AlertDescription>
