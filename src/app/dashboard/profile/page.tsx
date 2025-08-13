@@ -79,7 +79,7 @@ export default function ProfilePage() {
               <div className="space-y-8">
                 <div className="flex items-center gap-6">
                     <Avatar className="h-24 w-24">
-                        <AvatarImage src={`https://placehold.co/96x96.png?text=${editableEmployee.name.charAt(0)}`} alt={editableEmployee.name} data-ai-hint="avatar person" />
+                        <AvatarImage src={editableEmployee.avatar} alt={editableEmployee.name} />
                         <AvatarFallback>{editableEmployee.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="grid gap-1.5">
