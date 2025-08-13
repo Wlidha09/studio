@@ -9,17 +9,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import WeeklyCalendar from '@/components/dashboard/weekly-calendar';
 import { useAuth } from '@/contexts/auth-context';
-import { addWorkSchedule, getWorkSchedules } from '@/lib/firestore';
+import { addWorkSchedule, getWorkSchedules, getEmployees } from '@/lib/firestore';
 import { Loader2 } from 'lucide-react';
+import AllSchedulesTable from '@/components/dashboard/all-schedules-table';
+import type { Employee, WorkSchedule } from '@/lib/types';
 
-export default function MySchedulePage() {
+export default function SchedulePage() {
   const { toast } = useToast();
   const { employee } = useAuth();
   const [selectedDays, setSelectedDays] = useState<Date[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const [weekToShow, setWeekToShow] = useState<Date[]>([]);
+  
+  // For AllSchedulesTable
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
 
   useEffect(() => {
     const today = new Date();
@@ -30,9 +37,12 @@ export default function MySchedulePage() {
   }, []);
 
    useEffect(() => {
-    async function fetchUserSchedule() {
+    async function fetchUserData() {
       if (employee && weekToShow.length > 0) {
+        setIsLoading(true);
         const allSchedules = await getWorkSchedules();
+        setSchedules(allSchedules);
+
         const nextWeekStartString = format(weekToShow[0], 'yyyy-MM-dd');
 
         const userScheduleForNextWeek = allSchedules.find(s => 
@@ -46,13 +56,17 @@ export default function MySchedulePage() {
         if (userScheduleForNextWeek) {
           setSelectedDays(userScheduleForNextWeek.dates.map(d => parseISO(d)));
           setHasSubmitted(true);
+          // If user has submitted, we also need employee data for the table
+          const allEmployees = await getEmployees();
+          setEmployees(allEmployees);
         } else {
           setSelectedDays([]);
           setHasSubmitted(false);
         }
+        setIsLoading(false);
       }
     }
-    fetchUserSchedule();
+    fetchUserData();
   }, [employee, weekToShow]);
 
 
@@ -109,6 +123,9 @@ export default function MySchedulePage() {
         };
         await addWorkSchedule(scheduleData);
         setHasSubmitted(true);
+        // Refetch employees for the table view
+        const allEmployees = await getEmployees();
+        setEmployees(allEmployees);
         toast({
             title: "Schedule Submitted!",
             description: `Your preferred days for next week have been saved.`,
@@ -124,6 +141,31 @@ export default function MySchedulePage() {
         setIsSubmitting(false);
     }
   }
+
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  if (hasSubmitted) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline text-2xl">All Work Schedules</CardTitle>
+                <CardDescription>
+                    This table displays the weekly work schedule for all employees for the current week. Your submission for next week has been recorded.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <AllSchedulesTable employees={employees} schedules={schedules} />
+            </CardContent>
+        </Card>
+    );
+  }
+
 
   return (
       <Card>
@@ -165,4 +207,5 @@ export default function MySchedulePage() {
       </Card>
   );
 }
+
 

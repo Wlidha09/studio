@@ -29,7 +29,6 @@ import {
   ClipboardCheck,
   ShieldAlert,
   CalendarPlus,
-  CalendarCheck,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -94,14 +93,8 @@ const menuItems = [
   {
     href: "/dashboard/schedule",
     icon: CalendarPlus,
-    label: "My Schedule",
+    label: "Schedule",
     pageKey: "schedule" as PageKey,
-  },
-   {
-    href: "/dashboard/work-schedules",
-    icon: CalendarCheck,
-    label: "All Schedules",
-    pageKey: "work-schedules" as PageKey,
   },
   {
     href: "/dashboard/job-description-generator",
@@ -203,4 +196,3 @@ export default function DashboardSidebar() {
     </Sidebar>
   );
 }
-
