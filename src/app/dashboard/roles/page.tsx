@@ -1,115 +1,168 @@
 
+
 "use client";
 
-import { useAtom } from 'jotai';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 import type { UserRole } from "@/lib/types";
-import { pages } from '@/lib/pages';
-import type { PageKey, PagePermissions } from '@/lib/permissions';
-import { permissionsAtom } from '@/lib/permissions';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { addRole, deleteRole, updateRole, getRoles } from "@/lib/firestore";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const roles: UserRole[] = ["Owner", "RH", "Manager", "Employee", "Dev"];
-const actions: (keyof PagePermissions)[] = ['view', 'create', 'edit', 'delete'];
+export default function RolesManagementPage() {
+  const [roles, setRoles] = useState<UserRole[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<UserRole | null>(null);
+  const { toast } = useToast();
 
-export default function RolesPage() {
-    const [permissions, setPermissions] = useAtom(permissionsAtom);
+  useEffect(() => {
+    async function fetchRoles() {
+      const fetchedRoles = await getRoles();
+      setRoles(fetchedRoles);
+    }
+    fetchRoles();
+  }, []);
 
-    const handlePermissionChange = (role: UserRole, page: PageKey, action: keyof PagePermissions, checked: boolean) => {
-        setPermissions(prev => {
-            const newPermissions = { ...prev };
-            if (!newPermissions[role]) newPermissions[role] = {} as any;
-            if (!newPermissions[role][page]) newPermissions[role][page] = { view: false };
+  const handleEdit = (role: UserRole) => {
+    setEditingRole(role);
+    setIsDialogOpen(true);
+  };
 
-            const currentPerms = newPermissions[role]?.[page] ?? {};
-            const updatedPagePermissions = { ...currentPerms, [action]: checked };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteRole(id);
+      setRoles(roles.filter((r) => r.id !== id));
+      toast({ title: "Role Deleted", description: "The role has been removed." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete role.", variant: "destructive" });
+    }
+  };
 
-            // If view is unchecked, all other permissions for that page should be unchecked
-            if (action === 'view' && !checked) {
-                Object.keys(updatedPagePermissions).forEach(key => {
-                    if (key !== 'view') {
-                        (updatedPagePermissions as any)[key] = false;
-                    }
-                });
-            }
-            
-            // If another action is checked, view should be checked
-            if(action !== 'view' && checked) {
-                updatedPagePermissions.view = true;
-            }
-
-
-            return {
-                ...prev,
-                [role]: {
-                    ...prev[role],
-                    [page]: updatedPagePermissions
-                }
-            };
-        });
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const roleData = {
+        name: formData.get("name") as string,
     };
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline text-2xl">Role Management</CardTitle>
-                <CardDescription>
-                    Configure page and action access for different user roles. Changes are saved automatically.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[150px] sticky left-0 bg-background z-10">Role</TableHead>
-                                {Object.values(pages).map(pageName => (
-                                    <TableHead key={pageName} colSpan={4} className="text-center min-w-[240px]">{pageName}</TableHead>
-                                ))}
-                            </TableRow>
-                            <TableRow>
-                                <TableHead className="sticky left-0 bg-background z-10"></TableHead>
-                                {Object.keys(pages).map(pageKey => (
-                                    actions.map(action => (
-                                        <TableHead key={`${pageKey}-${action}`} className="capitalize">{action}</TableHead>
-                                    ))
-                                ))}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.map(role => (
-                                <TableRow key={role}>
-                                    <TableCell className="font-medium sticky left-0 bg-background z-10">{role}</TableCell>
-                                    {Object.keys(pages).map(pageKey => {
-                                        const pageKeyTyped = pageKey as PageKey;
-                                        const pagePerms = permissions[role]?.[pageKeyTyped] ?? {};
-                                        
-                                        const hasAction = (action: keyof PagePermissions) => {
-                                            const allPerms = permissions['Dev']?.[pageKeyTyped] ?? {};
-                                            return action in allPerms;
-                                        };
+    if (editingRole) {
+      const updatedRole = { ...editingRole, ...roleData };
+      try {
+        await updateRole(updatedRole);
+        setRoles(roles.map(r => r.id === editingRole.id ? updatedRole : r));
+        toast({ title: "Role Updated", description: "Role details have been saved." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to update role.", variant: "destructive" });
+      }
+    } else {
+      try {
+        const newRole = await addRole(roleData);
+        setRoles([...roles, newRole]);
+        toast({ title: "Role Added", description: "A new role has been added." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to add role.", variant: "destructive" });
+      }
+    }
 
+    setIsDialogOpen(false);
+    setEditingRole(null);
+  };
 
-                                        return actions.map(action => (
-                                            <TableCell key={`${role}-${pageKey}-${action}`}>
-                                                {hasAction(action) && (
-                                                     <Checkbox
-                                                        id={`${role}-${pageKey}-${action}`}
-                                                        checked={!!pagePerms?.[action]}
-                                                        onCheckedChange={(checked) => handlePermissionChange(role, pageKeyTyped, action, !!checked)}
-                                                        disabled={action !== 'view' && !pagePerms?.view}
-                                                    />
-                                                )}
-                                            </TableCell>
-                                        ));
-                                    })}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-    );
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline text-2xl">Role Management</CardTitle>
+          <CardDescription>
+            Add, edit, or delete user roles. These roles will be available when assigning a role to an employee.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+           <div className="flex justify-end mb-4">
+                <Button onClick={() => { setEditingRole(null); setIsDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Role
+                </Button>
+            </div>
+            <div className="border rounded-lg">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Role Name</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {roles.map((role) => (
+                    <TableRow key={role.id}>
+                        <TableCell className="font-medium">{role.name}</TableCell>
+                        <TableCell className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(role)}>Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(role.id)} className="text-destructive">Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingRole ? "Edit Role" : "Add Role"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Name</Label>
+                <Input id="name" name="name" defaultValue={editingRole?.name} className="col-span-3" required />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

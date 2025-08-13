@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -43,6 +44,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
 import type { PageKey } from "@/lib/permissions";
+import { useEffect, useState } from "react";
+import { getRoles } from "@/lib/firestore";
 
 const menuItems = [
   {
@@ -116,7 +119,16 @@ const menuItems = [
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const { role, setRole } = useRole();
+  const [roles, setRoles] = useState<UserRole[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchRoles() {
+        const fetchedRoles = await getRoles();
+        setRoles(fetchedRoles);
+    }
+    fetchRoles();
+  }, [])
 
   const handleLogout = async () => {
     await signOut();
@@ -157,16 +169,14 @@ export default function DashboardSidebar() {
       <SidebarFooter>
         <div className="px-2 space-y-2">
           <Label className="text-xs font-medium text-sidebar-foreground/70">Switch Role (Demo)</Label>
-          <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+          <Select value={role} onValueChange={(value) => setRole(value)}>
             <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
               <SelectValue placeholder="Select a role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Owner">Owner</SelectItem>
-              <SelectItem value="RH">RH</SelectItem>
-              <SelectItem value="Manager">Manager</SelectItem>
-              <SelectItem value="Employee">Employee</SelectItem>
-              <SelectItem value="Dev">Dev</SelectItem>
+                {roles.map(r => (
+                    <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>

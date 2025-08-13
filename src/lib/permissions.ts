@@ -1,7 +1,7 @@
 
+
 "use client";
 
-import type { UserRole } from "./types";
 import { atomWithStorage } from 'jotai/utils';
 import { pages } from "./pages";
 
@@ -16,7 +16,7 @@ export type PagePermissions = {
 
 export type Permissions = Partial<Record<PageKey, PagePermissions>>;
 
-export type RolePermissions = Record<UserRole, Permissions>;
+export type RolePermissions = Record<string, Permissions>;
 
 const allPermissions: PagePermissions = { view: true, create: true, edit: true, delete: true };
 

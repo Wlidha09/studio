@@ -1,11 +1,15 @@
 
-export type UserRole = "Owner" | "RH" | "Manager" | "Employee" | "Dev";
+
+export type UserRole = {
+  id: string;
+  name: string;
+};
 
 export type Employee = {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: string;
   department: string;
   avatar: string;
   hireDate: string;

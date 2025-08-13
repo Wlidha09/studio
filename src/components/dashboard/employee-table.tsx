@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -39,9 +39,9 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { addEmployee, deleteEmployee, updateEmployee } from "@/lib/firestore";
+import { addEmployee, deleteEmployee, updateEmployee, getRoles } from "@/lib/firestore";
 
-const roleColors: Record<UserRole, string> = {
+const roleColors: Record<string, string> = {
   Owner: "bg-amber-500",
   Dev: "bg-purple-500",
   RH: "bg-blue-500",
@@ -56,9 +56,18 @@ interface EmployeeTableProps {
 
 export default function EmployeeTable({ initialEmployees, departments }: EmployeeTableProps) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [roles, setRoles] = useState<UserRole[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchRoles() {
+      const fetchedRoles = await getRoles();
+      setRoles(fetchedRoles);
+    }
+    fetchRoles();
+  }, []);
 
   const handleEdit = (employee: Employee) => {
     setEditingEmployee(employee);
@@ -78,7 +87,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const employeeData = Object.fromEntries(formData.entries()) as Omit<Employee, 'id' | 'avatar'> & { role: UserRole };
+    const employeeData = Object.fromEntries(formData.entries()) as Omit<Employee, 'id' | 'avatar'>;
     
     if (editingEmployee) {
       const updatedEmployee = { ...editingEmployee, ...employeeData };
@@ -143,7 +152,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                 </TableCell>
                 <TableCell>{employee.department}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className={`${roleColors[employee.role]} text-white`}>{employee.role}</Badge>
+                  <Badge variant="secondary" className={`${roleColors[employee.role] ?? 'bg-gray-500'} text-white`}>{employee.role}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
                 <DropdownMenu>
@@ -202,11 +211,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                         <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Employee">Employee</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="RH">RH</SelectItem>
-                        <SelectItem value="Owner">Owner</SelectItem>
-                        <SelectItem value="Dev">Dev</SelectItem>
+                        {roles.map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
                     </SelectContent>
                  </Select>
               </div>

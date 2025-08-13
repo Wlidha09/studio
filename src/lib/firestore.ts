@@ -1,10 +1,11 @@
 
+
 "use server";
 
 import { db } from './firebase';
 import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
-import type { Employee, Candidate, Department, LeaveRequest, Holiday, WorkSchedule } from './types';
+import type { Employee, Candidate, Department, LeaveRequest, Holiday, WorkSchedule, UserRole } from './types';
 
 // Helper function to convert Firestore Timestamps to strings
 const convertDocTimestamps = (doc: any) => {
@@ -229,4 +230,26 @@ export async function addWorkSchedule(schedule: Omit<WorkSchedule, 'id'>): Promi
   const docRef = await addDoc(collection(db, 'workSchedules'), { ...schedule, createdAt: serverTimestamp() });
   const newDoc = await getDoc(docRef);
   return convertDocTimestamps(newDoc) as WorkSchedule;
+}
+
+// Roles Functions
+export async function getRoles(): Promise<UserRole[]> {
+  const querySnapshot = await getDocs(collection(db, 'roles'));
+  return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as UserRole);
+}
+
+export async function addRole(role: Omit<UserRole, 'id'>): Promise<UserRole> {
+  const docRef = await addDoc(collection(db, 'roles'), { ...role, createdAt: serverTimestamp() });
+  return { id: docRef.id, ...role };
+}
+
+export async function updateRole(role: UserRole): Promise<void> {
+  const { id, ...data } = role;
+  const docRef = doc(db, 'roles', id);
+  await updateDoc(docRef, data);
+}
+
+export async function deleteRole(id: string): Promise<void> {
+  const docRef = doc(db, 'roles', id);
+  await deleteDoc(docRef);
 }
