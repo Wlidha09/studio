@@ -80,6 +80,12 @@ export default function RolesManagementPage() {
 
   const displayedRoles = currentUserRole === 'Dev' ? roles : roles.filter(r => r.name !== 'Dev');
 
+  const isViewDisabled = (roleName: string, pageKey: PageKey) => {
+    const pagePermissions = permissions[roleName]?.[pageKey];
+    if (!pagePermissions) return false;
+    return pagePermissions.create || pagePermissions.edit || pagePermissions.delete;
+  };
+
   return (
     <>
       <Card>
@@ -128,7 +134,11 @@ export default function RolesManagementPage() {
                                             <Label htmlFor={`${role.id}-${pageKey}-${action}`} className="text-xs capitalize">{action}</Label>
                                             <Checkbox
                                                 id={`${role.id}-${pageKey}-${action}`}
-                                                disabled={!canEdit || (role.name === "Owner" && pageKey === 'roles' && action === 'edit')}
+                                                disabled={
+                                                    !canEdit || 
+                                                    (role.name === "Owner" && pageKey === 'roles' && action === 'edit') ||
+                                                    (action === 'view' && isViewDisabled(role.name, pageKey as PageKey))
+                                                }
                                                 checked={permissions[role.name]?.[pageKey as PageKey]?.[action] ?? false}
                                                 onCheckedChange={(checked) => setPermission(role.name, pageKey as PageKey, action, !!checked)}
                                             />
