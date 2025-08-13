@@ -122,6 +122,8 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
     setEditingEmployee(null);
   };
 
+  const assignableRoles = roles.filter(r => r.name !== 'Dev');
+
   return (
     <>
       <div className="flex justify-end mb-4">
@@ -221,7 +223,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                         <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                        {roles.map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+                        {assignableRoles.map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
                     </SelectContent>
                  </Select>
               </div>
