@@ -20,8 +20,12 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     async function fetchUserRole() {
         if(user && user.email) {
             const employee = await getEmployeeByEmail(user.email);
-            if(employee && employee.role) {
-                setRole(employee.role);
+            if(employee) {
+                if (employee.isDev) {
+                    setRole('Dev');
+                } else if (employee.role) {
+                    setRole(employee.role);
+                }
             }
         }
     }

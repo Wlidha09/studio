@@ -14,6 +14,7 @@ export type Employee = {
   avatar: string;
   hireDate: string;
   birthDate: string;
+  isDev?: boolean;
 };
 
 export type Candidate = {
