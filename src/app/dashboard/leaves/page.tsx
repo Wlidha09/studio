@@ -1,12 +1,17 @@
 import LeaveRequestsTable from "@/components/dashboard/leave-requests-table";
-import { getLeaveRequests, getEmployees } from "@/lib/firestore";
+import { getLeaveRequests, getEmployees, getDepartments } from "@/lib/firestore";
 
 export default async function LeavesPage() {
   const leaveRequests = await getLeaveRequests();
   const employees = await getEmployees();
+  const departments = await getDepartments();
   return (
     <div>
-      <LeaveRequestsTable initialLeaveRequests={leaveRequests} employees={employees} />
+      <LeaveRequestsTable
+        initialLeaveRequests={leaveRequests}
+        employees={employees}
+        departments={departments}
+      />
     </div>
   );
 }
