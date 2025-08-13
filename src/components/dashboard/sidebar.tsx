@@ -140,6 +140,8 @@ export default function DashboardSidebar() {
     return pathname === href;
   };
 
+  const displayedRoles = role === 'Dev' ? roles : roles.filter(r => r.name !== 'Dev');
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -177,7 +179,7 @@ export default function DashboardSidebar() {
               <SelectValue placeholder="Select a role" />
             </SelectTrigger>
             <SelectContent>
-                {roles.map(r => (
+                {displayedRoles.map(r => (
                     <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
                 ))}
             </SelectContent>
