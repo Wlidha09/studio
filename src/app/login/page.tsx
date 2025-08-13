@@ -48,10 +48,12 @@ export default function LoginPage() {
                 description = "This email is already in use. Please sign in or use a different email.";
             }
         } else {
-            if (firebaseError.code === "auth/wrong-password" || firebaseError.code === "auth/user-not-found" || firebaseError.code === 'auth/invalid-credential') {
+             if (firebaseError.code === "auth/wrong-password" || firebaseError.code === "auth/user-not-found" || firebaseError.code === 'auth/invalid-credential') {
                 description = "Invalid email or password. Please try again.";
             } else if (firebaseError.code === 'auth/user-disabled') {
                 description = "This user account has been disabled by an administrator.";
+            } else if (firebaseError.code === 'auth/inactive-user') {
+                description = "This user account is inactive. Please contact an administrator.";
             }
         }
         
@@ -62,6 +64,20 @@ export default function LoginPage() {
                 variant: "destructive",
             });
         }
+    }
+
+    const checkUserStatus = async (email: string): Promise<boolean> => {
+        const employee = await getEmployeeByEmail(email);
+        if (!employee) {
+            // New user trying to register via Google. We'll allow this for now
+            // and create the employee record. Or if they are registering with email.
+            return true;
+        }
+        if (!employee.actif) {
+            handleAuthError({ code: 'auth/inactive-user' });
+            return false;
+        }
+        return true;
     }
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -78,12 +94,34 @@ export default function LoginPage() {
         
         setIsLoading(true);
         setAuthError(null);
+
+        if (!isRegisterMode) {
+            const isActive = await checkUserStatus(email);
+            if (!isActive) {
+                setIsLoading(false);
+                return;
+            }
+        }
+        
         try {
             const user = isRegisterMode 
                 ? await createUserWithEmail(email, password)
                 : await signInWithEmail(email, password);
 
             if (user) {
+                 if (isRegisterMode) {
+                     await addEmployee({
+                        name: 'New User',
+                        email: user.email!,
+                        role: 'Employee',
+                        department: 'Unassigned',
+                        avatar: `https://placehold.co/40x40.png?text=${user.email!.charAt(0)}`,
+                        hireDate: format(new Date(), 'yyyy-MM-dd'),
+                        birthDate: '',
+                        actif: true,
+                    });
+                    toast({ title: "Welcome!", description: "Your employee profile has been created." });
+                 }
                 router.push("/dashboard");
             } else {
                  handleAuthError({code: 'auth/generic-error'});
@@ -100,8 +138,13 @@ export default function LoginPage() {
         setAuthError(null);
         try {
             const user = await signInWithGoogle();
-            if (user) {
-                if(user.email?.endsWith(`@${ALLOWED_DOMAIN}`)) {
+            if (user && user.email) {
+                if(user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+                    const isActive = await checkUserStatus(user.email);
+                    if (!isActive) {
+                        setIsGoogleLoading(false);
+                        return;
+                    }
                     const existingEmployee = await getEmployeeByEmail(user.email);
                     if (!existingEmployee) {
                         // Create a new employee if one doesn't exist
@@ -112,7 +155,8 @@ export default function LoginPage() {
                             department: 'Unassigned',
                             avatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.email.charAt(0)}`,
                             hireDate: format(new Date(), 'yyyy-MM-dd'),
-                            birthDate: '' 
+                            birthDate: '',
+                            actif: true,
                         });
                         toast({ title: "Welcome!", description: "Your employee profile has been created." });
                     }

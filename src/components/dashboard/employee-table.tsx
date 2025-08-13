@@ -41,6 +41,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { addEmployee, deleteEmployee, updateEmployee, getRoles } from "@/lib/firestore";
 import { usePermissions } from "@/hooks/use-permissions";
+import { Switch } from "../ui/switch";
 
 const roleColors: Record<string, string> = {
   Owner: "bg-amber-500",
@@ -93,7 +94,10 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const employeeData = Object.fromEntries(formData.entries()) as Omit<Employee, 'id' | 'avatar'>;
+    const employeeData = {
+        ...Object.fromEntries(formData.entries()),
+        actif: formData.get('actif') === 'on'
+    } as Omit<Employee, 'id' | 'avatar'>;
     
     if (editingEmployee) {
       const updatedEmployee = { ...editingEmployee, ...employeeData };
@@ -140,6 +144,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
               <TableHead>Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -163,6 +168,11 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                 <TableCell>{employee.department}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={`${roleColors[employee.role] ?? 'bg-gray-500'} text-white`}>{employee.role}</Badge>
+                </TableCell>
+                 <TableCell>
+                  <Badge variant={employee.actif ? 'default' : 'destructive'} className={employee.actif ? 'bg-green-500' : 'bg-red-500'}>
+                    {employee.actif ? 'Active' : 'Inactive'}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                 {(canEdit || canDelete) && (
@@ -230,6 +240,10 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="birthDate" className="text-right">Birth Date</Label>
                 <Input id="birthDate" name="birthDate" type="date" defaultValue={editingEmployee?.birthDate} className="col-span-3" required/>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="actif" className="text-right">Active</Label>
+                <Switch id="actif" name="actif" defaultChecked={editingEmployee?.actif ?? true} />
               </div>
             </div>
             <DialogFooter>

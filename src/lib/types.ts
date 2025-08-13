@@ -15,6 +15,7 @@ export type Employee = {
   hireDate: string;
   birthDate: string;
   isDev?: boolean;
+  actif: boolean;
 };
 
 export type Candidate = {

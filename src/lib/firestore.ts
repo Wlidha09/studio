@@ -26,25 +26,25 @@ export async function seedDatabase() {
 
     const employeesCollection = collection(db, 'employees');
     initialEmployees.forEach((employee) => {
-      const docRef = doc(employeesCollection, employee.id);
+      const docRef = doc(employeesCollection);
       batch.set(docRef, {...employee, createdAt: serverTimestamp()});
     });
 
     const candidatesCollection = collection(db, 'candidates');
     initialCandidates.forEach((candidate) => {
-      const docRef = doc(candidatesCollection, candidate.id);
+      const docRef = doc(candidatesCollection);
       batch.set(docRef, {...candidate, createdAt: serverTimestamp()});
     });
 
     const departmentsCollection = collection(db, 'departments');
     initialDepartments.forEach((department) => {
-      const docRef = doc(departmentsCollection, department.id);
+      const docRef = doc(departmentsCollection);
       batch.set(docRef, {...department, createdAt: serverTimestamp()});
     });
 
     const leaveRequestsCollection = collection(db, 'leaveRequests');
     initialLeaveRequests.forEach((leaveRequest) => {
-      const docRef = doc(leaveRequestsCollection, leaveRequest.id);
+      const docRef = doc(leaveRequestsCollection);
       batch.set(docRef, {...leaveRequest, createdAt: serverTimestamp()});
     });
 
@@ -81,7 +81,8 @@ export async function getLeaveRequests(): Promise<LeaveRequest[]> {
 // Employee Functions
 export async function addEmployee(employee: Omit<Employee, 'id'>): Promise<Employee> {
   const docRef = await addDoc(collection(db, 'employees'), { ...employee, createdAt: serverTimestamp() });
-  return { id: docRef.id, ...employee };
+  const newDoc = await getDoc(docRef);
+  return convertDocTimestamps(newDoc) as Employee;
 }
 
 export async function updateEmployee(employee: Employee): Promise<void> {
