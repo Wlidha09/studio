@@ -12,8 +12,9 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { FirebaseError } from "firebase/app";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getEmployeeByEmail, addEmployee } from "@/lib/firestore";
+import { getEmployeeByEmail, addEmployee, type Employee } from "@/lib/firestore";
 import { format } from "date-fns";
+import type { User } from "firebase/auth";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -65,14 +66,29 @@ export default function LoginPage() {
             });
         }
     }
+    
+    const createNewEmployeeProfile = async (user: User) => {
+        const newEmployeeData: Omit<Employee, 'id'> = {
+            name: user.displayName || 'New User',
+            email: user.email!,
+            role: 'Employee',
+            department: 'Unassigned',
+            avatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.email!.charAt(0)}`,
+            hireDate: format(new Date(), 'yyyy-MM-dd'),
+            birthDate: '',
+            actif: true, // Default to active
+        };
+        await addEmployee(newEmployeeData);
+        toast({ title: "Welcome!", description: "Your employee profile has been created." });
+    }
 
     const checkUserStatus = async (email: string): Promise<boolean> => {
         const employee = await getEmployeeByEmail(email);
+        // If employee doesn't exist yet, it's a new registration, so we allow it.
         if (!employee) {
-            // New user trying to register via Google. We'll allow this for now
-            // and create the employee record. Or if they are registering with email.
             return true;
         }
+        // If employee exists, check if they are active.
         if (!employee.actif) {
             handleAuthError({ code: 'auth/inactive-user' });
             return false;
@@ -95,12 +111,10 @@ export default function LoginPage() {
         setIsLoading(true);
         setAuthError(null);
 
-        if (!isRegisterMode) {
-            const isActive = await checkUserStatus(email);
-            if (!isActive) {
-                setIsLoading(false);
-                return;
-            }
+        const isActive = await checkUserStatus(email);
+        if (!isActive) {
+            setIsLoading(false);
+            return;
         }
         
         try {
@@ -110,17 +124,7 @@ export default function LoginPage() {
 
             if (user) {
                  if (isRegisterMode) {
-                     await addEmployee({
-                        name: 'New User',
-                        email: user.email!,
-                        role: 'Employee',
-                        department: 'Unassigned',
-                        avatar: `https://placehold.co/40x40.png?text=${user.email!.charAt(0)}`,
-                        hireDate: format(new Date(), 'yyyy-MM-dd'),
-                        birthDate: '',
-                        actif: true,
-                    });
-                    toast({ title: "Welcome!", description: "Your employee profile has been created." });
+                    await createNewEmployeeProfile(user);
                  }
                 router.push("/dashboard");
             } else {
@@ -139,35 +143,27 @@ export default function LoginPage() {
         try {
             const user = await signInWithGoogle();
             if (user && user.email) {
-                if(user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-                    const isActive = await checkUserStatus(user.email);
-                    if (!isActive) {
-                        setIsGoogleLoading(false);
-                        return;
-                    }
-                    const existingEmployee = await getEmployeeByEmail(user.email);
-                    if (!existingEmployee) {
-                        // Create a new employee if one doesn't exist
-                        await addEmployee({
-                            name: user.displayName || 'New User',
-                            email: user.email,
-                            role: 'Employee',
-                            department: 'Unassigned',
-                            avatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.email.charAt(0)}`,
-                            hireDate: format(new Date(), 'yyyy-MM-dd'),
-                            birthDate: '',
-                            actif: true,
-                        });
-                        toast({ title: "Welcome!", description: "Your employee profile has been created." });
-                    }
-                    router.push("/dashboard");
-                } else {
-                    toast({
+                if(!user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+                     toast({
                         title: "Invalid Domain",
                         description: `Access is restricted to users with a "@${ALLOWED_DOMAIN}" email address.`,
                         variant: "destructive",
                     });
+                    setIsGoogleLoading(false);
+                    return;
                 }
+
+                const isActive = await checkUserStatus(user.email);
+                if (!isActive) {
+                    setIsGoogleLoading(false);
+                    return;
+                }
+
+                const existingEmployee = await getEmployeeByEmail(user.email);
+                if (!existingEmployee) {
+                    await createNewEmployeeProfile(user);
+                }
+                router.push("/dashboard");
             }
         } catch (error) {
             handleAuthError(error);
