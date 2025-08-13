@@ -31,6 +31,7 @@ import { pages } from "@/lib/pages";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { PageKey, Action } from "@/lib/permissions";
+import { useRole } from "@/contexts/role-context";
 
 export default function RolesManagementPage() {
   const [roles, setRoles] = useState<UserRole[]>([]);
@@ -38,6 +39,7 @@ export default function RolesManagementPage() {
   const [newRoleName, setNewRoleName] = useState("");
   const { toast } = useToast();
   const { permissions, setPermission, hasPermission } = usePermissions();
+  const { role: currentUserRole } = useRole();
 
   const canCreate = hasPermission('roles', 'create');
   const canDelete = hasPermission('roles', 'delete');
@@ -76,6 +78,8 @@ export default function RolesManagementPage() {
     }
   };
 
+  const displayedRoles = currentUserRole === 'Dev' ? roles : roles.filter(r => r.name !== 'Dev');
+
   return (
     <>
       <Card>
@@ -98,11 +102,11 @@ export default function RolesManagementPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[200px]">Page</TableHead>
-                        {roles.map((role) => (
+                        {displayedRoles.map((role) => (
                             <TableHead key={role.id} className="text-center min-w-[150px]">
                                 <div className="flex items-center justify-center gap-2">
                                     {role.name}
-                                    {canDelete && role.name !== 'Owner' && (
+                                    {canDelete && role.name !== 'Owner' && role.name !== 'Dev' && (
                                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(role.id, role.name)}>
                                             <Trash2 className="h-4 w-4 text-destructive"/>
                                         </Button>
@@ -116,7 +120,7 @@ export default function RolesManagementPage() {
                     {Object.entries(pages).map(([pageKey, pageName]) => (
                         <TableRow key={pageKey}>
                             <TableCell className="font-medium">{pageName}</TableCell>
-                            {roles.map(role => (
+                            {displayedRoles.map(role => (
                                 <TableCell key={role.id} className="text-center">
                                     <div className="flex justify-center items-center gap-3">
                                     {(['view', 'create', 'edit', 'delete'] as Action[]).map(action => (
