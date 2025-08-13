@@ -77,7 +77,7 @@ const initialPermissions: RolePermissions = {
         attendance: { view: true },
         tickets: { view: true },
         schedule: { view: true, create: true },
-        "work-schedules": { view: false },
+        "work-schedules": { view: true },
         'job-description-generator': { view: false },
         roles: { view: false },
         'seed-database': { view: false },
