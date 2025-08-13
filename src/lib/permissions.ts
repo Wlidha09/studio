@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { atomWithStorage, createJSONStorage } from 'jotai/utils';
@@ -31,6 +32,7 @@ const initialPermissions: RolePermissions = {
         attendance: allPermissions,
         tickets: allPermissions,
         schedule: allPermissions,
+        "work-schedules": { view: true },
         'job-description-generator': { view: true },
         roles: allPermissions,
         'seed-database': { view: true },
@@ -45,6 +47,7 @@ const initialPermissions: RolePermissions = {
         attendance: allPermissions,
         tickets: allPermissions,
         schedule: { view: true },
+        "work-schedules": { view: true },
         'job-description-generator': { view: true },
         roles: { view: true, edit: true },
         'seed-database': { view: false },
@@ -59,6 +62,7 @@ const initialPermissions: RolePermissions = {
         attendance: viewOnly,
         tickets: { view: true },
         schedule: { view: true, create: true },
+        "work-schedules": { view: true },
         'job-description-generator': { view: true },
         roles: viewOnly,
         'seed-database': { view: false },
@@ -73,6 +77,7 @@ const initialPermissions: RolePermissions = {
         attendance: { view: true },
         tickets: { view: true },
         schedule: { view: true, create: true },
+        "work-schedules": { view: false },
         'job-description-generator': { view: false },
         roles: { view: false },
         'seed-database': { view: false },
@@ -87,6 +92,7 @@ const initialPermissions: RolePermissions = {
         attendance: allPermissions,
         tickets: allPermissions,
         schedule: allPermissions,
+        "work-schedules": allPermissions,
         'job-description-generator': allPermissions,
         roles: allPermissions,
         'seed-database': allPermissions,
@@ -96,3 +102,4 @@ const initialPermissions: RolePermissions = {
 
 const storage = createJSONStorage(() => localStorage);
 export const permissionsAtom = atomWithStorage<RolePermissions>('role_permissions', initialPermissions, storage);
+

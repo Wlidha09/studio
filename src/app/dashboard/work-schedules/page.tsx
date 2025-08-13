@@ -1,22 +1,22 @@
+import AllSchedulesTable from "@/components/dashboard/all-schedules-table";
+import { getEmployees, getWorkSchedules } from "@/lib/firestore";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getWorkSchedules } from "@/lib/firestore";
-import WorkSchedulesTable from "@/components/dashboard/work-schedules-table";
-
-export default async function WorkSchedulesPage() {
+export default async function AllSchedulesPage() {
+    const employees = await getEmployees();
     const schedules = await getWorkSchedules();
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline text-2xl">Submitted Work Schedules</CardTitle>
+                <CardTitle className="font-headline text-2xl">All Work Schedules</CardTitle>
                 <CardDescription>
-                    This table displays all the weekly work schedules submitted by employees.
+                    This table displays the weekly work schedule for all employees for the current week.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <WorkSchedulesTable initialSchedules={schedules} />
+                <AllSchedulesTable employees={employees} schedules={schedules} />
             </CardContent>
         </Card>
-    )
+    );
 }
