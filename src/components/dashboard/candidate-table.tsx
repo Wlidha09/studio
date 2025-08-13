@@ -40,6 +40,7 @@ import {
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { addCandidate, deleteCandidate, updateCandidate } from "@/lib/firestore";
+import { usePermissions } from "@/hooks/use-permissions";
 
 type Status = "Applied" | "Interviewing" | "Offered" | "Hired" | "Rejected";
 
@@ -60,6 +61,11 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('candidates', 'create');
+  const canEdit = hasPermission('candidates', 'edit');
+  const canDelete = hasPermission('candidates', 'delete');
 
   const handleEdit = (candidate: Candidate) => {
     setEditingCandidate(candidate);
@@ -111,9 +117,11 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditingCandidate(null); setIsDialogOpen(true); }}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Add Candidate
-        </Button>
+        {canCreate && (
+            <Button onClick={() => { setEditingCandidate(null); setIsDialogOpen(true); }}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Candidate
+            </Button>
+        )}
       </div>
       <div className="border rounded-lg">
         <Table>
@@ -147,18 +155,20 @@ export default function CandidateTable({ initialCandidates }: CandidateTableProp
                   <Badge variant="outline" className={statusColors[candidate.status]}>{candidate.status}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEdit(candidate)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(candidate.id)} className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {(canEdit || canDelete) && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        {canEdit && <DropdownMenuItem onClick={() => handleEdit(candidate)}>Edit</DropdownMenuItem>}
+                        {canDelete && <DropdownMenuItem onClick={() => handleDelete(candidate.id)} className="text-destructive">Delete</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
                 </TableCell>
               </TableRow>
             ))}

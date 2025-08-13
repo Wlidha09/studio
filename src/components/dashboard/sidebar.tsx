@@ -40,12 +40,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "../ui/label";
-import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
 import type { PageKey } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 import { getRoles } from "@/lib/firestore";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const menuItems = [
   {
@@ -121,6 +121,7 @@ export default function DashboardSidebar() {
   const { role, setRole } = useRole();
   const [roles, setRoles] = useState<UserRole[]>([]);
   const router = useRouter();
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     async function fetchRoles() {
@@ -152,17 +153,19 @@ export default function DashboardSidebar() {
       <SidebarContent className="flex-grow">
         <SidebarMenu>
           {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
-                <SidebarMenuButton
-                  isActive={isNavItemActive(item.href)}
-                  tooltip={item.label}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
+             hasPermission(item.pageKey, 'view') && (
+                <SidebarMenuItem key={item.href}>
+                <Link href={item.href}>
+                    <SidebarMenuButton
+                    isActive={isNavItemActive(item.href)}
+                    tooltip={item.label}
+                    >
+                    <item.icon />
+                    <span>{item.label}</span>
+                    </SidebarMenuButton>
+                </Link>
+                </SidebarMenuItem>
+            )
           ))}
         </SidebarMenu>
       </SidebarContent>

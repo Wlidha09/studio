@@ -40,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
+import { usePermissions } from "@/hooks/use-permissions";
 
 type Status = "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 
@@ -59,6 +60,10 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { employee } = useAuth();
   const { toast } = useToast();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('leaves', 'create');
+  const canEdit = hasPermission('leaves', 'edit');
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -110,9 +115,11 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setIsDialogOpen(true)}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
-        </Button>
+        {canCreate && (
+            <Button onClick={() => setIsDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
+            </Button>
+        )}
       </div>
       <div className="border rounded-lg">
         <Table>
@@ -137,39 +144,41 @@ export default function LeaveRequestsTable({ initialLeaveRequests }: LeaveReques
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                    <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        disabled={
-                            request.status === "Approved" ||
-                            request.status === "Rejected"
-                        }
-                        >
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {request.status === "Pending" && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve (Manager)
-                            </DropdownMenuItem>
-                        )}
-                        {request.status === "ApprovedByManager" && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve (RH)
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} disabled={request.status === 'Rejected' || request.status === 'Approved'}>
-                        <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                        Reject
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                    </DropdownMenu>
+                    {canEdit && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                disabled={
+                                    request.status === "Approved" ||
+                                    request.status === "Rejected"
+                                }
+                                >
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {request.status === "Pending" && (
+                                    <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
+                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                        Approve (Manager)
+                                    </DropdownMenuItem>
+                                )}
+                                {request.status === "ApprovedByManager" && (
+                                    <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
+                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                        Approve (RH)
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} disabled={request.status === 'Rejected' || request.status === 'Approved'}>
+                                <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                Reject
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </TableCell>
               </TableRow>
             ))}

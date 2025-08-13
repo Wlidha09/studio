@@ -12,4 +12,4 @@ export const pages = {
     roles: "Roles",
     'seed-database': "Seed Database",
     profile: "My Profile"
-};
+} as const;

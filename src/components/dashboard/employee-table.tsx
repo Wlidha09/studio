@@ -40,6 +40,7 @@ import {
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { addEmployee, deleteEmployee, updateEmployee, getRoles } from "@/lib/firestore";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const roleColors: Record<string, string> = {
   Owner: "bg-amber-500",
@@ -60,6 +61,11 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('employees', 'create');
+  const canEdit = hasPermission('employees', 'edit');
+  const canDelete = hasPermission('employees', 'delete');
 
   useEffect(() => {
     async function fetchRoles() {
@@ -119,9 +125,11 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditingEmployee(null); setIsDialogOpen(true); }}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
-        </Button>
+        {canCreate && (
+            <Button onClick={() => { setEditingEmployee(null); setIsDialogOpen(true); }}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
+            </Button>
+        )}
       </div>
       <div className="border rounded-lg">
         <Table>
@@ -155,18 +163,20 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                   <Badge variant="secondary" className={`${roleColors[employee.role] ?? 'bg-gray-500'} text-white`}>{employee.role}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEdit(employee)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(employee.id)} className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {(canEdit || canDelete) && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        {canEdit && <DropdownMenuItem onClick={() => handleEdit(employee)}>Edit</DropdownMenuItem>}
+                        {canDelete && <DropdownMenuItem onClick={() => handleDelete(employee.id)} className="text-destructive">Delete</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
                 </TableCell>
               </TableRow>
             ))}

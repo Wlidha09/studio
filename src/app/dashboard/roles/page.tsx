@@ -12,13 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 import {
   Dialog,
@@ -31,14 +25,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { addRole, deleteRole, updateRole, getRoles } from "@/lib/firestore";
+import { addRole, deleteRole, getRoles } from "@/lib/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { pages } from "@/lib/pages";
+import { Checkbox } from "@/components/ui/checkbox";
+import { usePermissions } from "@/hooks/use-permissions";
+import type { PageKey, Action } from "@/lib/permissions";
 
 export default function RolesManagementPage() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<UserRole | null>(null);
+  const [newRoleName, setNewRoleName] = useState("");
   const { toast } = useToast();
+  const { permissions, setPermission, hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('roles', 'create');
+  const canDelete = hasPermission('roles', 'delete');
+  const canEdit = hasPermission('roles', 'edit');
 
   useEffect(() => {
     async function fetchRoles() {
@@ -48,49 +51,29 @@ export default function RolesManagementPage() {
     fetchRoles();
   }, []);
 
-  const handleEdit = (role: UserRole) => {
-    setEditingRole(role);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, name: string) => {
     try {
       await deleteRole(id);
       setRoles(roles.filter((r) => r.id !== id));
-      toast({ title: "Role Deleted", description: "The role has been removed." });
+      toast({ title: "Role Deleted", description: `The role "${name}" has been removed.` });
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete role.", variant: "destructive" });
     }
   };
 
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddRole = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const roleData = {
-        name: formData.get("name") as string,
-    };
+    if (!newRoleName) return;
 
-    if (editingRole) {
-      const updatedRole = { ...editingRole, ...roleData };
-      try {
-        await updateRole(updatedRole);
-        setRoles(roles.map(r => r.id === editingRole.id ? updatedRole : r));
-        toast({ title: "Role Updated", description: "Role details have been saved." });
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to update role.", variant: "destructive" });
-      }
-    } else {
-      try {
-        const newRole = await addRole(roleData);
-        setRoles([...roles, newRole]);
-        toast({ title: "Role Added", description: "A new role has been added." });
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to add role.", variant: "destructive" });
-      }
+    try {
+      const newRole = await addRole({ name: newRoleName });
+      setRoles([...roles, newRole]);
+      setNewRoleName("");
+      toast({ title: "Role Added", description: `The role "${newRoleName}" has been added.` });
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add role.", variant: "destructive" });
     }
-
-    setIsDialogOpen(false);
-    setEditingRole(null);
   };
 
   return (
@@ -99,42 +82,58 @@ export default function RolesManagementPage() {
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Role Management</CardTitle>
           <CardDescription>
-            Add, edit, or delete user roles. These roles will be available when assigning a role to an employee.
+            Configure permissions for different user roles across the application.
           </CardDescription>
         </CardHeader>
         <CardContent>
            <div className="flex justify-end mb-4">
-                <Button onClick={() => { setEditingRole(null); setIsDialogOpen(true); }}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Role
-                </Button>
+                {canCreate && (
+                    <Button onClick={() => setIsDialogOpen(true) }>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Role
+                    </Button>
+                )}
             </div>
-            <div className="border rounded-lg">
+            <div className="border rounded-lg overflow-x-auto">
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Role Name</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="w-[200px]">Page</TableHead>
+                        {roles.map((role) => (
+                            <TableHead key={role.id} className="text-center min-w-[150px]">
+                                <div className="flex items-center justify-center gap-2">
+                                    {role.name}
+                                    {canDelete && role.name !== 'Owner' && (
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(role.id, role.name)}>
+                                            <Trash2 className="h-4 w-4 text-destructive"/>
+                                        </Button>
+                                    )}
+                                </div>
+                            </TableHead>
+                        ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {roles.map((role) => (
-                    <TableRow key={role.id}>
-                        <TableCell className="font-medium">{role.name}</TableCell>
-                        <TableCell className="text-right">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(role)}>Edit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(role.id)} className="text-destructive">Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
+                    {Object.entries(pages).map(([pageKey, pageName]) => (
+                        <TableRow key={pageKey}>
+                            <TableCell className="font-medium">{pageName}</TableCell>
+                            {roles.map(role => (
+                                <TableCell key={role.id} className="text-center">
+                                    <div className="flex justify-center items-center gap-3">
+                                    {(['view', 'create', 'edit', 'delete'] as Action[]).map(action => (
+                                        <div key={action} className="flex flex-col items-center gap-1">
+                                            <Label htmlFor={`${role.id}-${pageKey}-${action}`} className="text-xs capitalize">{action}</Label>
+                                            <Checkbox
+                                                id={`${role.id}-${pageKey}-${action}`}
+                                                disabled={!canEdit || (role.name === "Owner" && pageKey === 'roles' && action === 'edit')}
+                                                checked={permissions[role.name]?.[pageKey as PageKey]?.[action] ?? false}
+                                                onCheckedChange={(checked) => setPermission(role.name, pageKey as PageKey, action, !!checked)}
+                                            />
+                                        </div>
+                                    ))}
+                                    </div>
+                                </TableCell>
+                            ))}
+                        </TableRow>
                     ))}
                 </TableBody>
                 </Table>
@@ -145,13 +144,13 @@ export default function RolesManagementPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingRole ? "Edit Role" : "Add Role"}</DialogTitle>
+            <DialogTitle>Add New Role</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave}>
+          <form onSubmit={handleAddRole}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">Name</Label>
-                <Input id="name" name="name" defaultValue={editingRole?.name} className="col-span-3" required />
+                <Input id="name" name="name" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} className="col-span-3" required />
               </div>
             </div>
             <DialogFooter>

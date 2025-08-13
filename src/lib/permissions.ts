@@ -1,11 +1,11 @@
 
-
 "use client";
 
-import { atomWithStorage } from 'jotai/utils';
+import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 import { pages } from "./pages";
 
 export type PageKey = keyof typeof pages;
+export type Action = 'view' | 'create' | 'edit' | 'delete';
 
 export type PagePermissions = {
     view: boolean;
@@ -19,6 +19,7 @@ export type Permissions = Partial<Record<PageKey, PagePermissions>>;
 export type RolePermissions = Record<string, Permissions>;
 
 const allPermissions: PagePermissions = { view: true, create: true, edit: true, delete: true };
+const viewOnly: PagePermissions = { view: true, create: false, edit: false, delete: false };
 
 const initialPermissions: RolePermissions = {
     Owner: {
@@ -37,44 +38,44 @@ const initialPermissions: RolePermissions = {
     },
     RH: {
         overview: { view: true },
-        employees: allPermissions,
+        employees: { view: true, create: true, edit: true, delete: false },
         candidates: allPermissions,
-        departments: allPermissions,
+        departments: { view: true, create: true, edit: true, delete: false },
         leaves: allPermissions,
         attendance: allPermissions,
         tickets: allPermissions,
-        schedule: allPermissions,
+        schedule: { view: true },
         'job-description-generator': { view: true },
-        roles: allPermissions,
-        'seed-database': { view: true },
+        roles: { view: true, edit: true },
+        'seed-database': { view: false },
         profile: { view: true },
     },
     Manager: {
         overview: { view: true },
-        employees: allPermissions,
-        candidates: allPermissions,
-        departments: allPermissions,
-        leaves: allPermissions,
-        attendance: allPermissions,
-        tickets: allPermissions,
-        schedule: allPermissions,
+        employees: { view: true },
+        candidates: { view: true, create: true, edit: true },
+        departments: viewOnly,
+        leaves: { view: true, create: true, edit: true },
+        attendance: viewOnly,
+        tickets: { view: true },
+        schedule: { view: true, create: true },
         'job-description-generator': { view: true },
-        roles: allPermissions,
-        'seed-database': { view: true },
+        roles: viewOnly,
+        'seed-database': { view: false },
         profile: { view: true },
     },
     Employee: {
         overview: { view: true },
-        employees: allPermissions,
-        candidates: allPermissions,
-        departments: allPermissions,
-        leaves: allPermissions,
-        attendance: allPermissions,
-        tickets: allPermissions,
-        schedule: allPermissions,
-        'job-description-generator': { view: true },
-        roles: allPermissions,
-        'seed-database': { view: true },
+        employees: { view: true },
+        candidates: { view: false },
+        departments: { view: false },
+        leaves: { view: true, create: true },
+        attendance: { view: true },
+        tickets: { view: true },
+        schedule: { view: true, create: true },
+        'job-description-generator': { view: false },
+        roles: { view: false },
+        'seed-database': { view: false },
         profile: { view: true },
     },
     Dev: {
@@ -86,11 +87,12 @@ const initialPermissions: RolePermissions = {
         attendance: allPermissions,
         tickets: allPermissions,
         schedule: allPermissions,
-        'job-description-generator': { view: true },
+        'job-description-generator': allPermissions,
         roles: allPermissions,
-        'seed-database': { view: true },
+        'seed-database': allPermissions,
         profile: { view: true },
     },
 };
 
-export const permissionsAtom = atomWithStorage<RolePermissions>('role_permissions', initialPermissions);
+const storage = createJSONStorage(() => localStorage);
+export const permissionsAtom = atomWithStorage<RolePermissions>('role_permissions', initialPermissions, storage);
