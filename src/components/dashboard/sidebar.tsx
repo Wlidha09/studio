@@ -172,20 +172,6 @@ export default function DashboardSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <div className="px-2 space-y-2">
-          <Label className="text-xs font-medium text-sidebar-foreground/70">Switch Role (Demo)</Label>
-          <Select value={role} onValueChange={(value) => setRole(value)}>
-            <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
-              <SelectValue placeholder="Select a role" />
-            </SelectTrigger>
-            <SelectContent>
-                {displayedRoles.map(r => (
-                    <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <SidebarSeparator />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
