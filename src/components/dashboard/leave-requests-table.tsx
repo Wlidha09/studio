@@ -137,7 +137,21 @@ export default function LeaveRequestsTable({
     setIsDialogOpen(false);
   };
 
-  const sortedRequests = leaveRequests.sort(
+  const employeeMap = new Map(employees.map(e => [e.id, e]));
+
+  const filteredRequests = leaveRequests.filter(request => {
+    if (role === 'Owner' || role === 'Dev' || role === 'RH') {
+      return true;
+    }
+    if (role === 'Manager' && currentUser) {
+      const requestingEmployee = employeeMap.get(request.employeeId);
+      return requestingEmployee?.department === currentUser.department;
+    }
+    // Employees should see their own requests
+    return request.employeeId === currentUser?.id;
+  });
+
+  const sortedRequests = filteredRequests.sort(
     (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   );
 
