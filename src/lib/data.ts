@@ -1,15 +1,15 @@
 import { Employee, Candidate, Department, LeaveRequest } from "./types";
 
 export const employees: Omit<Employee, 'id'>[] = [
-  { name: "Alice Johnson", email: "alice.j@example.com", role: "Manager", department: "Engineering", avatar: "/avatars/01.png", hireDate: "2022-01-15", birthDate: "1988-05-20", actif: true },
-  { name: "Bob Williams", email: "bob.w@example.com", role: "Employee", department: "Engineering", avatar: "/avatars/02.png", hireDate: "2022-03-10", birthDate: "1992-11-30", actif: true },
-  { name: "Charlie Brown", email: "charlie.b@example.com", role: "Employee", department: "Engineering", avatar: "/avatars/03.png", hireDate: "2023-06-01", birthDate: "1995-02-18", actif: true },
-  { name: "Diana Prince", email: "diana.p@example.com", role: "Manager", department: "HR", avatar: "/avatars/04.png", hireDate: "2021-09-20", birthDate: "1985-07-22", actif: true },
-  { name: "Ethan Hunt", email: "ethan.h@example.com", role: "RH", department: "HR", avatar: "/avatars/05.png", hireDate: "2020-11-05", birthDate: "1989-12-15", actif: true },
-  { name: "Fiona Glenanne", email: "fiona.g@example.com", role: "Manager", department: "Marketing", avatar: "/avatars/06.png", hireDate: "2022-02-18", birthDate: "1990-08-10", actif: false },
-  { name: "George Costanza", email: "george.c@example.com", role: "Employee", department: "Marketing", avatar: "/avatars/07.png", hireDate: "2023-08-21", birthDate: "1993-04-05", actif: true },
   { name: "Hannah Montana", email: "hannah.m@example.com", role: "Owner", department: "Executive", avatar: "/avatars/08.png", hireDate: "2019-01-01", birthDate: "1980-01-01", actif: true },
-  { name: "Ian Malcolm", email: "ian.m@example.com", role: "Dev", department: "Dev", avatar: "/avatars/09.png", hireDate: "2024-01-10", birthDate: "1982-03-03", isDev: true, actif: true },
+  { name: "Alice Johnson", email: "alice.j@example.com", role: "Manager", department: "Engineering", avatar: "/avatars/01.png", hireDate: "2022-01-15", birthDate: "1988-05-20", actif: true, managerName: "Hannah Montana" },
+  { name: "Bob Williams", email: "bob.w@example.com", role: "Employee", department: "Engineering", avatar: "/avatars/02.png", hireDate: "2022-03-10", birthDate: "1992-11-30", actif: true, managerName: "Alice Johnson" },
+  { name: "Charlie Brown", email: "charlie.b@example.com", role: "Employee", department: "Engineering", avatar: "/avatars/03.png", hireDate: "2023-06-01", birthDate: "1995-02-18", actif: true, managerName: "Alice Johnson" },
+  { name: "Diana Prince", email: "diana.p@example.com", role: "Manager", department: "HR", avatar: "/avatars/04.png", hireDate: "2021-09-20", birthDate: "1985-07-22", actif: true, managerName: "Hannah Montana" },
+  { name: "Ethan Hunt", email: "ethan.h@example.com", role: "RH", department: "HR", avatar: "/avatars/05.png", hireDate: "2020-11-05", birthDate: "1989-12-15", actif: true, managerName: "Diana Prince" },
+  { name: "Fiona Glenanne", email: "fiona.g@example.com", role: "Manager", department: "Marketing", avatar: "/avatars/06.png", hireDate: "2022-02-18", birthDate: "1990-08-10", actif: false, managerName: "Hannah Montana" },
+  { name: "George Costanza", email: "george.c@example.com", role: "Employee", department: "Marketing", avatar: "/avatars/07.png", hireDate: "2023-08-21", birthDate: "1993-04-05", actif: true, managerName: "Fiona Glenanne" },
+  { name: "Ian Malcolm", email: "ian.m@example.com", role: "Dev", department: "Dev", avatar: "/avatars/09.png", hireDate: "2024-01-10", birthDate: "1982-03-03", isDev: true, actif: true, managerName: "Hannah Montana" },
 ];
 
 export const candidates: Omit<Candidate, 'id'>[] = [

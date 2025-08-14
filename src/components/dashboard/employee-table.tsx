@@ -156,6 +156,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
               <TableHead>Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Manager</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -181,6 +182,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                 <TableCell>
                   <Badge variant="secondary" className={`${roleColors[employee.role] ?? 'bg-gray-500'} text-white`}>{employee.role}</Badge>
                 </TableCell>
+                <TableCell>{employee.managerName || 'N/A'}</TableCell>
                  <TableCell>
                     <Button
                         variant={employee.actif ? "outline" : "destructive"}
@@ -252,6 +254,18 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                     </SelectTrigger>
                     <SelectContent>
                         {assignableRoles.map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+                    </SelectContent>
+                 </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="managerName" className="text-right">Manager</Label>
+                 <Select name="managerName" defaultValue={editingEmployee?.managerName}>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a manager" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="None">None</SelectItem>
+                        {employees.filter(e => e.id !== editingEmployee?.id).map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
                     </SelectContent>
                  </Select>
               </div>
