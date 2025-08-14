@@ -143,10 +143,12 @@ export default function LeaveRequestsTable({
     if (role === 'Owner' || role === 'Dev' || role === 'RH') {
       return true;
     }
-    if (role === 'Manager' && currentUser) {
+    
+    if (role === 'Manager') {
       const requestingEmployee = employeeMap.get(request.employeeId);
-      return requestingEmployee?.department === currentUser.department;
+      return requestingEmployee?.department === currentUser?.department;
     }
+    
     // Employees should see their own requests
     return request.employeeId === currentUser?.id;
   });
