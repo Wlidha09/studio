@@ -74,6 +74,7 @@ export default function LeaveRequestsTable({
   const canCreate = hasPermission("leaves", "create");
   const canEdit = hasPermission("leaves", "edit");
   const isRH = role === 'RH';
+  const isOwner = role === 'Owner';
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -93,6 +94,10 @@ export default function LeaveRequestsTable({
       });
     }
   };
+  
+  const employeeMap = new Map(employees.map(e => [e.id, e]));
+  const departmentMap = new Map(departments.map(d => [d.name, d]));
+  const leaderNames = new Set(departments.map(d => d.teamLeader));
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -111,11 +116,13 @@ export default function LeaveRequestsTable({
       startDate: formData.get("startDate") as string,
       endDate: formData.get("endDate") as string,
     };
+    
+    const isLeader = leaderNames.has(currentUser.name);
 
     const newRequestData: Omit<LeaveRequest, "id"> = {
       employeeName: currentUser.name,
       employeeId: currentUser.id,
-      status: "Pending",
+      status: isLeader ? "ApprovedByManager" : "Pending", // Skip manager approval for leaders
       ...leaveData,
     };
 
@@ -137,8 +144,6 @@ export default function LeaveRequestsTable({
     setIsDialogOpen(false);
   };
 
-  const employeeMap = new Map(employees.map(e => [e.id, e]));
-  const departmentMap = new Map(departments.map(d => [d.name, d]));
 
   const filteredRequests = leaveRequests.filter(request => {
     if (!currentUser) return false;
@@ -150,7 +155,6 @@ export default function LeaveRequestsTable({
     // Managers see requests from their own department
     if (role === 'Manager') {
       const requestingEmployee = employeeMap.get(request.employeeId);
-      // currentUser.department should be the department they lead, not just belong to
       const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
       return requestingEmployee?.department === managerDepartment?.name;
     }
@@ -173,7 +177,8 @@ export default function LeaveRequestsTable({
     if (!employeeDepartment) return null;
 
     // The current user must be the leader of the requesting employee's department
-    if (employeeDepartment.teamLeader === currentUser.name) {
+    // and not the same person making the request.
+    if (employeeDepartment.teamLeader === currentUser.name && request.employeeId !== currentUser.id) {
       return (
         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
           <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -186,12 +191,12 @@ export default function LeaveRequestsTable({
   }
   
   const getRHApprovalAction = (request: LeaveRequest) => {
-     if (!isRH || request.status !== "ApprovedByManager") return null;
+     if ((!isRH && !isOwner) || request.status !== "ApprovedByManager") return null;
 
      return (
         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
             <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-            Approve (RH)
+            Approve (Final)
         </DropdownMenuItem>
      )
   }
@@ -205,8 +210,11 @@ export default function LeaveRequestsTable({
     const employeeDepartment = departmentMap.get(requestingEmployee.department);
     if (!employeeDepartment) return null;
 
-    // Reject action available to department manager or RH
-    if (isRH || employeeDepartment.teamLeader === currentUser.name) {
+    const isLeaderOfDepartment = employeeDepartment.teamLeader === currentUser.name;
+    const isRequestFromSelf = request.employeeId === currentUser.id;
+
+    // Reject action available to department manager (if not their own request), or RH/Owner
+    if ((isLeaderOfDepartment && !isRequestFromSelf) || isRH || isOwner) {
         return (
             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")}>
                 <XCircle className="mr-2 h-4 w-4 text-red-500" />
