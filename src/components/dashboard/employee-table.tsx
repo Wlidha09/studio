@@ -112,6 +112,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
       const newEmployeeData = {
         ...employeeData,
         avatar: `https://placehold.co/40x40.png?text=${employeeData.name.charAt(0)}`,
+        actif: employeeData.actif ?? true
       };
       try {
         const newEmployee = await addEmployee(newEmployeeData);
@@ -124,6 +125,17 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
     
     setIsDialogOpen(false);
     setEditingEmployee(null);
+  };
+  
+  const handleStatusToggle = async (employee: Employee) => {
+    const updatedEmployee = { ...employee, actif: !employee.actif };
+    try {
+        await updateEmployee(updatedEmployee);
+        setEmployees(employees.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp));
+        toast({ title: "Employee Status Updated", description: `${updatedEmployee.name}'s status has been changed.` });
+    } catch (error) {
+        toast({ title: "Error", description: "Failed to update employee status.", variant: "destructive" });
+    }
   };
 
   const assignableRoles = roles.filter(r => r.name !== 'Dev');
@@ -170,9 +182,15 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
                   <Badge variant="secondary" className={`${roleColors[employee.role] ?? 'bg-gray-500'} text-white`}>{employee.role}</Badge>
                 </TableCell>
                  <TableCell>
-                  <Badge variant={employee.actif ? 'default' : 'destructive'} className={employee.actif ? 'bg-green-500' : 'bg-red-500'}>
-                    {employee.actif ? 'Active' : 'Inactive'}
-                  </Badge>
+                    <Button
+                        variant={employee.actif ? "outline" : "destructive"}
+                        size="sm"
+                        onClick={() => handleStatusToggle(employee)}
+                        disabled={!canEdit}
+                        className="w-24"
+                    >
+                        {employee.actif ? 'Active' : 'Inactive'}
+                    </Button>
                 </TableCell>
                 <TableCell className="text-right">
                 {(canEdit || canDelete) && (
