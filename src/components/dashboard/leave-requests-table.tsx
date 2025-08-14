@@ -138,18 +138,24 @@ export default function LeaveRequestsTable({
   };
 
   const employeeMap = new Map(employees.map(e => [e.id, e]));
+  const departmentMap = new Map(departments.map(d => [d.name, d]));
 
   const filteredRequests = leaveRequests.filter(request => {
+    if (!currentUser) return false;
+    // Owner, Dev, and RH can see all requests
     if (role === 'Owner' || role === 'Dev' || role === 'RH') {
       return true;
     }
     
+    // Managers see requests from their own department
     if (role === 'Manager') {
       const requestingEmployee = employeeMap.get(request.employeeId);
-      return requestingEmployee?.department === currentUser?.department;
+      // currentUser.department should be the department they lead, not just belong to
+      const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+      return requestingEmployee?.department === managerDepartment?.name;
     }
     
-    // Employees should see their own requests
+    // Employees should only see their own requests
     return request.employeeId === currentUser?.id;
   });
 
@@ -160,12 +166,13 @@ export default function LeaveRequestsTable({
   const getManagerApprovalAction = (request: LeaveRequest) => {
     if (!currentUser || request.status !== "Pending") return null;
 
-    const requestingEmployee = employees.find(e => e.id === request.employeeId);
+    const requestingEmployee = employeeMap.get(request.employeeId);
     if (!requestingEmployee) return null;
 
-    const employeeDepartment = departments.find(d => d.name === requestingEmployee.department);
+    const employeeDepartment = departmentMap.get(requestingEmployee.department);
     if (!employeeDepartment) return null;
 
+    // The current user must be the leader of the requesting employee's department
     if (employeeDepartment.teamLeader === currentUser.name) {
       return (
         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
@@ -190,16 +197,16 @@ export default function LeaveRequestsTable({
   }
 
   const getRejectAction = (request: LeaveRequest) => {
-    if (request.status === 'Approved' || request.status === 'Rejected') return null;
+    if (request.status === 'Approved' || request.status === 'Rejected' || !currentUser) return null;
 
-    const requestingEmployee = employees.find(e => e.id === request.employeeId);
+    const requestingEmployee = employeeMap.get(request.employeeId);
     if (!requestingEmployee) return null;
     
-    const employeeDepartment = departments.find(d => d.name === requestingEmployee.department);
+    const employeeDepartment = departmentMap.get(requestingEmployee.department);
     if (!employeeDepartment) return null;
 
     // Reject action available to department manager or RH
-    if (isRH || (currentUser && employeeDepartment.teamLeader === currentUser.name)) {
+    if (isRH || employeeDepartment.teamLeader === currentUser.name) {
         return (
             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")}>
                 <XCircle className="mr-2 h-4 w-4 text-red-500" />
