@@ -45,7 +45,9 @@ const sendScheduleRemindersFlow = ai.defineFlow(
                     if (!s.dates || s.dates.length === 0) {
                         return false;
                     }
-                    const scheduleWeekStart = startOfWeek(parseISO(s.dates[0]), { weekStartsOn: 1 });
+                    // A schedule is for next week if its first day is within the next week interval
+                    const firstDayOfSchedule = parseISO(s.dates[0]);
+                    const scheduleWeekStart = startOfWeek(firstDayOfSchedule, { weekStartsOn: 1 });
                     return format(scheduleWeekStart, 'yyyy-MM-dd') === nextWeekStartString;
                 })
                 .map(s => s.employeeId)
