@@ -10,9 +10,11 @@ import type { Employee, LeaveRequest, Holiday } from "@/lib/types";
 import { differenceInDays, getDaysInMonth, isSameDay, isWeekend, parseISO, startOfMonth, format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/contexts/role-context";
+import { useAuth } from "@/contexts/auth-context";
 
 interface TicketResult {
     totalDays: number;
@@ -25,15 +27,21 @@ interface TicketResult {
 
 
 export default function TicketPage() {
+    const { role } = useRole();
+    const { employee: currentUser } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
     const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
     const [ticketResult, setTicketResult] = useState<TicketResult | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const canSelectEmployee = role === 'Owner' || role === 'RH';
 
     useEffect(() => {
         async function fetchData() {
+            setIsLoading(true);
             const currentYear = new Date().getFullYear();
             const [emps, leaves, hols] = await Promise.all([
                 getEmployees(), 
@@ -43,9 +51,21 @@ export default function TicketPage() {
             setEmployees(emps);
             setLeaveRequests(leaves);
             setHolidays(hols);
+            setIsLoading(false);
         }
         fetchData();
     }, []);
+
+    useEffect(() => {
+        // If user cannot select, automatically set to their own ID
+        if (!canSelectEmployee && currentUser) {
+            setSelectedEmployeeId(currentUser.id);
+        }
+        // If user can select, but hasn't, don't set anything
+        if (canSelectEmployee && !selectedEmployeeId) {
+            setTicketResult(null);
+        }
+    }, [canSelectEmployee, currentUser, selectedEmployeeId]);
     
     const calculateWorkDays = () => {
         if (!selectedEmployeeId) return;
@@ -76,9 +96,13 @@ export default function TicketPage() {
         employeeLeaveRequests.forEach(req => {
             const startDate = parseISO(req.startDate);
             const endDate = parseISO(req.endDate);
-            if(startDate.getMonth() === selectedMonth.getMonth() || endDate.getMonth() === selectedMonth.getMonth()) {
-                 const days = differenceInDays(endDate, startDate) + 1;
-                 leaveDays += days;
+            
+            // Iterate over each day of the leave request
+            for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+                // Check if the day is within the selected month and not a weekend or public holiday
+                if (d.getMonth() === selectedMonth.getMonth() && !isWeekend(d) && !paidHolidaysInMonth.some(h => isSameDay(h, d))) {
+                     leaveDays++;
+                }
             }
         });
 
@@ -95,6 +119,15 @@ export default function TicketPage() {
         });
     }
 
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+
     return (
         <Card className="max-w-4xl mx-auto">
             <CardHeader>
@@ -105,19 +138,21 @@ export default function TicketPage() {
             </CardHeader>
             <CardContent>
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
-                    <div className="space-y-2">
-                        <Label>Employee</Label>
-                        <Select onValueChange={setSelectedEmployeeId} value={selectedEmployeeId ?? undefined}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select an employee" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {employees.map(emp => (
-                                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {canSelectEmployee && (
+                        <div className="space-y-2">
+                            <Label>Employee</Label>
+                            <Select onValueChange={setSelectedEmployeeId} value={selectedEmployeeId ?? undefined}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select an employee" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {employees.map(emp => (
+                                        <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className="space-y-2">
                          <Label>Month</Label>
                          <Popover>
@@ -150,7 +185,9 @@ export default function TicketPage() {
 
                 {ticketResult && (
                     <div className="border-t pt-6">
-                        <h3 className="text-xl font-semibold mb-4">Calculation Result</h3>
+                        <h3 className="text-xl font-semibold mb-4">
+                            Calculation Result for {canSelectEmployee ? employees.find(e => e.id === selectedEmployeeId)?.name : currentUser?.name}
+                        </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
                             <div className="p-4 bg-muted rounded-lg">
                                 <p className="text-sm text-muted-foreground">Total Days in Month</p>
