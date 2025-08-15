@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { getEmployees, getWorkSchedules, sendNotification } from '@/lib/firestore';
 import { z } from 'genkit';
-import { addDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, format, parseISO, isWithinInterval } from 'date-fns';
 
 const SendScheduleRemindersOutputSchema = z.object({
     success: z.boolean(),
@@ -34,7 +34,7 @@ const sendScheduleRemindersFlow = ai.defineFlow(
     try {
         const today = new Date();
         const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
-        const nextWeekStartString = format(startOfNextWeek, 'yyyy-MM-dd');
+        const endOfNextWeek = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
         
         const allEmployees = await getEmployees();
         const allSchedules = await getWorkSchedules();
@@ -45,15 +45,16 @@ const sendScheduleRemindersFlow = ai.defineFlow(
                     if (!s.dates || s.dates.length === 0) {
                         return false;
                     }
-                    // A schedule is for next week if its first day is within the next week interval
-                    const firstDayOfSchedule = parseISO(s.dates[0]);
-                    const scheduleWeekStart = startOfWeek(firstDayOfSchedule, { weekStartsOn: 1 });
-                    return format(scheduleWeekStart, 'yyyy-MM-dd') === nextWeekStartString;
+                    // A schedule is for next week if ANY of its dates fall within the next week interval
+                    return s.dates.some(dateStr => {
+                        const scheduleDate = parseISO(dateStr);
+                        return isWithinInterval(scheduleDate, { start: startOfNextWeek, end: endOfNextWeek });
+                    });
                 })
                 .map(s => s.employeeId)
         );
 
-        const employeesToNotify = allEmployees.filter(emp => !employeesWithNextWeekSchedule.has(emp.id) && emp.fcmToken);
+        const employeesToNotify = allEmployees.filter(emp => !employeesWithNextWeekSchedule.has(emp.id) && emp.fcmToken && emp.actif);
 
         if (employeesToNotify.length === 0) {
             return {
