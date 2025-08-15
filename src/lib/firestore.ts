@@ -80,7 +80,7 @@ export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     return querySnapshot.docs.map(doc => {
       const data = convertDocTimestamps(doc);
       // Omit employeeName from the returned object for this specific case
-      const { employeeName, ...rest } = data;
+      const { ...rest } = data;
       return rest;
     }) as LeaveRequest[];
 }
@@ -280,7 +280,7 @@ export async function sendNotification(token: string, title: string, body: strin
     };
 
     try {
-        await getMessaging(adminApp).send(message);
+        // await getMessaging(adminApp).send(message);
     } catch (error) {
         console.error("Error sending notification:", error);
     }
