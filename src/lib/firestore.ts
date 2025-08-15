@@ -160,7 +160,8 @@ export async function deleteDepartment(id: string): Promise<void> {
 // Leave Request Functions
 export async function addLeaveRequest(leaveRequest: Omit<LeaveRequest, 'id'>): Promise<LeaveRequest> {
     const docRef = await addDoc(collection(db, 'leaveRequests'), { ...leaveRequest, createdAt: serverTimestamp() });
-    return { id: docRef.id, ...leaveRequest };
+    const newDocSnap = await getDoc(docRef);
+    return convertDocTimestamps(newDocSnap) as LeaveRequest;
 }
 
 export async function updateLeaveRequestStatus(id: string, status: LeaveRequest['status']): Promise<void> {

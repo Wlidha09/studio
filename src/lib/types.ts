@@ -36,7 +36,6 @@ export type Department = {
 
 export type LeaveRequest = {
   id: string;
-  employeeName: string;
   employeeId: string;
   leaveType: "Vacation" | "Sick Leave" | "Personal";
   startDate: string;

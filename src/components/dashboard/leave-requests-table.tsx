@@ -120,7 +120,6 @@ export default function LeaveRequestsTable({
     const isLeader = leaderNames.has(currentUser.name);
 
     const newRequestData: Omit<LeaveRequest, "id"> = {
-      employeeName: currentUser.name,
       employeeId: currentUser.id,
       status: isLeader ? "ApprovedByManager" : "Pending", // Skip manager approval for leaders
       ...leaveData,
@@ -253,10 +252,11 @@ export default function LeaveRequestsTable({
               const rhApprovalAction = getRHApprovalAction(request);
               const rejectAction = getRejectAction(request);
               const canPerformAction = managerApprovalAction || rhApprovalAction || rejectAction;
+              const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
 
               return (
               <TableRow key={request.id}>
-                <TableCell>{request.employeeName}</TableCell>
+                <TableCell>{employeeName}</TableCell>
                 <TableCell>{request.leaveType}</TableCell>
                 <TableCell>
                   {request.startDate} to {request.endDate}
