@@ -29,6 +29,7 @@ import {
   ClipboardCheck,
   ShieldAlert,
   CalendarPlus,
+  BellRing,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -101,6 +102,12 @@ const menuItems = [
     icon: Wand2,
     label: "AI Job Generator",
     pageKey: "job-description-generator" as PageKey,
+  },
+  {
+    href: "/dashboard/send-schedule-reminders",
+    icon: BellRing,
+    label: "Send Reminders",
+    pageKey: "send-schedule-reminders" as PageKey,
   },
   {
     href: "/dashboard/roles",

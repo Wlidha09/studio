@@ -12,5 +12,6 @@ export const pages = {
     'job-description-generator': "AI Job Generator",
     roles: "Roles",
     'seed-database': "Seed Database",
+    'send-schedule-reminders': "Send Reminders",
     profile: "My Profile"
 } as const;

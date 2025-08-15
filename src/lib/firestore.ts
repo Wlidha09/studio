@@ -6,6 +6,9 @@ import { db } from './firebase';
 import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
 import type { Employee, Candidate, Department, LeaveRequest, Holiday, WorkSchedule, UserRole } from './types';
+import { getMessaging } from "firebase-admin/messaging";
+import { adminApp } from './firebase-admin';
+
 
 // Helper function to convert Firestore Timestamps to strings
 const convertDocTimestamps = (doc: any) => {
@@ -74,7 +77,12 @@ export async function getDepartments(): Promise<Department[]> {
 
 export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     const querySnapshot = await getDocs(collection(db, 'leaveRequests'));
-    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as LeaveRequest);
+    return querySnapshot.docs.map(doc => {
+      const data = convertDocTimestamps(doc);
+      // Omit employeeName from the returned object for this specific case
+      const { employeeName, ...rest } = data;
+      return rest;
+    }) as LeaveRequest[];
 }
 
 
@@ -124,7 +132,8 @@ export async function getEmployeeDepartment(employeeId: string): Promise<string 
 // Candidate Functions
 export async function addCandidate(candidate: Omit<Candidate, 'id'>): Promise<Candidate> {
     const docRef = await addDoc(collection(db, 'candidates'), { ...candidate, createdAt: serverTimestamp() });
-    return { id: docRef.id, ...candidate };
+    const newDoc = await getDoc(docRef);
+    return convertDocTimestamps(newDoc) as Candidate;
 }
 
 export async function updateCandidate(candidate: Candidate): Promise<void> {
@@ -142,7 +151,8 @@ export async function deleteCandidate(id: string): Promise<void> {
 // Department Functions
 export async function addDepartment(department: Omit<Department, 'id'>): Promise<Department> {
     const docRef = await addDoc(collection(db, 'departments'), { ...department, createdAt: serverTimestamp() });
-    return { id: docRef.id, ...department };
+    const newDoc = await getDoc(docRef);
+    return convertDocTimestamps(newDoc) as Department;
 }
 
 export async function updateDepartment(department: Department): Promise<void> {
@@ -242,7 +252,8 @@ export async function getRoles(): Promise<UserRole[]> {
 
 export async function addRole(role: Omit<UserRole, 'id'>): Promise<UserRole> {
   const docRef = await addDoc(collection(db, 'roles'), { ...role, createdAt: serverTimestamp() });
-  return { id: docRef.id, ...role };
+  const newDoc = await getDoc(docRef);
+  return convertDocTimestamps(newDoc) as UserRole;
 }
 
 export async function updateRole(role: UserRole): Promise<void> {
@@ -254,4 +265,23 @@ export async function updateRole(role: UserRole): Promise<void> {
 export async function deleteRole(id: string): Promise<void> {
   const docRef = doc(db, 'roles', id);
   await deleteDoc(docRef);
+}
+
+
+// Notification Functions
+export async function sendNotification(token: string, title: string, body: string) {
+    if (!token) {
+        console.error("FCM token is missing.");
+        return;
+    }
+    const message = {
+        notification: { title, body },
+        token: token,
+    };
+
+    try {
+        await getMessaging(adminApp).send(message);
+    } catch (error) {
+        console.error("Error sending notification:", error);
+    }
 }

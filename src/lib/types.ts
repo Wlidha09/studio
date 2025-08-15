@@ -58,3 +58,8 @@ export type WorkSchedule = {
   dates: string[]; // YYYY-MM-DD format
   submissionDate: string;
 }
+
+export type NotificationPayload = {
+    title: string;
+    body: string;
+};
