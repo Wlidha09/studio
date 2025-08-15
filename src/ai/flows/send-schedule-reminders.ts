@@ -42,6 +42,9 @@ const sendScheduleRemindersFlow = ai.defineFlow(
         const employeesWithNextWeekSchedule = new Set(
             allSchedules
                 .filter(s => {
+                    if (!s.dates || s.dates.length === 0) {
+                        return false;
+                    }
                     const scheduleWeekStart = startOfWeek(parseISO(s.dates[0]), { weekStartsOn: 1 });
                     return format(scheduleWeekStart, 'yyyy-MM-dd') === nextWeekStartString;
                 })
