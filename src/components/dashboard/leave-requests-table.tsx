@@ -75,6 +75,10 @@ export default function LeaveRequestsTable({
   const canEdit = hasPermission("leaves", "edit");
   const isRH = role === 'RH';
   const isOwner = role === 'Owner';
+  
+  const employeeMap = new Map(employees.map(e => [e.id, e]));
+  const departmentMap = new Map(departments.map(d => [d.name, d]));
+  const leaderNames = new Set(departments.map(d => d.teamLeader));
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -94,10 +98,6 @@ export default function LeaveRequestsTable({
       });
     }
   };
-  
-  const employeeMap = new Map(employees.map(e => [e.id, e]));
-  const departmentMap = new Map(departments.map(d => [d.name, d]));
-  const leaderNames = new Set(departments.map(d => d.teamLeader));
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -155,6 +155,7 @@ export default function LeaveRequestsTable({
     // Managers see requests from their own department
     if (role === 'Manager') {
       const requestingEmployee = employeeMap.get(request.employeeId);
+      // The current user must be a department leader to be considered a manager for this check
       const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
       return requestingEmployee?.department === managerDepartment?.name;
     }
