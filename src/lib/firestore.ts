@@ -25,7 +25,16 @@ const convertDocTimestamps = (doc: any) => {
 // Seed Database
 export async function seedDatabase() {
   try {
+    const collectionsToClear = ['employees', 'candidates', 'departments', 'leaveRequests', 'holidays', 'workSchedules'];
     const batch = writeBatch(db);
+
+    // Clear existing data in collections
+    for (const collectionName of collectionsToClear) {
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+    }
 
     const employeesCollection = collection(db, 'employees');
     initialEmployees.forEach((employee) => {
