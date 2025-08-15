@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -42,6 +42,8 @@ import { useToast } from "@/hooks/use-toast";
 import { addEmployee, deleteEmployee, updateEmployee, getRoles } from "@/lib/firestore";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Switch } from "../ui/switch";
+import { useAuth } from "@/contexts/auth-context";
+import { useRole } from "@/contexts/role-context";
 
 const roleColors: Record<string, string> = {
   Owner: "bg-amber-500",
@@ -63,6 +65,8 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
   const { hasPermission } = usePermissions();
+  const { employee: currentUser } = useAuth();
+  const { role } = useRole();
 
   const canCreate = hasPermission('employees', 'create');
   const canEdit = hasPermission('employees', 'edit');
@@ -75,6 +79,29 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
     }
     fetchRoles();
   }, []);
+
+  useEffect(() => {
+    setEmployees(initialEmployees);
+  }, [initialEmployees]);
+
+
+  const filteredEmployees = useMemo(() => {
+    if (!currentUser) return [];
+
+    if (role === 'Owner' || role === 'Dev' || role === 'RH') {
+      return employees;
+    }
+
+    const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+
+    if (role === 'Manager' && managerDepartment) {
+      return employees.filter(e => e.department === managerDepartment.name);
+    }
+
+    // For regular employees, show employees in the same department
+    return employees.filter(e => e.department === currentUser.department);
+
+  }, [employees, currentUser, role, departments]);
 
   const handleEdit = (employee: Employee) => {
     setEditingEmployee(employee);
@@ -162,7 +189,7 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
             </TableRow>
           </TableHeader>
           <TableBody>
-            {employees.map((employee) => (
+            {filteredEmployees.map((employee) => (
               <TableRow key={employee.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
