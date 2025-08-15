@@ -17,6 +17,7 @@ export type Employee = {
   isDev?: boolean;
   actif: boolean;
   managerName?: string;
+  fcmToken?: string;
 };
 
 export type Candidate = {
