@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { getEmployees, getWorkSchedules, sendNotification } from '@/lib/firestore';
 import { z } from 'genkit';
-import { addDays, startOfWeek, endOfWeek, format, parseISO, isWithinInterval } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns';
 
 const SendScheduleRemindersOutputSchema = z.object({
     success: z.boolean(),
@@ -42,30 +42,40 @@ const sendScheduleRemindersFlow = ai.defineFlow(
         const employeesWithNextWeekSchedule = new Set(
             allSchedules
                 .filter(s => {
+                    // Ensure the schedule has dates before proceeding
                     if (!s.dates || s.dates.length === 0) {
                         return false;
                     }
                     // A schedule is for next week if ANY of its dates fall within the next week interval
                     return s.dates.some(dateStr => {
-                        const scheduleDate = parseISO(dateStr);
-                        return isWithinInterval(scheduleDate, { start: startOfNextWeek, end: endOfNextWeek });
+                        try {
+                            const scheduleDate = parseISO(dateStr);
+                            return isWithinInterval(scheduleDate, { start: startOfNextWeek, end: endOfNextWeek });
+                        } catch (e) {
+                            // Ignore invalid date strings
+                            return false;
+                        }
                     });
                 })
                 .map(s => s.employeeId)
         );
 
-        const employeesToNotify = allEmployees.filter(emp => !employeesWithNextWeekSchedule.has(emp.id) && emp.fcmToken && emp.actif);
+        const employeesToNotify = allEmployees.filter(emp => 
+            emp.actif && // Only active employees
+            emp.fcmToken && // Only employees with a notification token
+            !employeesWithNextWeekSchedule.has(emp.id) // Only employees who have NOT submitted
+        );
 
         if (employeesToNotify.length === 0) {
             return {
                 success: true,
-                message: "All employees have submitted their schedules for next week.",
+                message: "All employees have submitted their schedules for next week, or no employees need reminders.",
                 notifiedCount: 0,
             };
         }
         
-        const notificationTitle = "Schedule Reminder";
-        const notificationBody = "Please submit your work schedule for next week.";
+        const notificationTitle = "Schedule Submission Reminder";
+        const notificationBody = "Please remember to submit your work schedule for the upcoming week.";
 
         for (const employee of employeesToNotify) {
             if (employee.fcmToken) {
@@ -81,9 +91,11 @@ const sendScheduleRemindersFlow = ai.defineFlow(
 
     } catch (error) {
         console.error("Error sending schedule reminders:", error);
+        // Provide a more descriptive error message
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         return {
             success: false,
-            message: "An error occurred while sending reminders.",
+            message: `An error occurred while sending reminders: ${errorMessage}`,
             notifiedCount: 0,
         };
     }
