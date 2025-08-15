@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -11,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { getEmployees, getWorkSchedules, sendNotification } from '@/lib/firestore';
 import { z } from 'genkit';
-import { addDays, startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, parseISO, isWithinInterval, format } from 'date-fns';
 
 const SendScheduleRemindersOutputSchema = z.object({
     success: z.boolean(),
@@ -33,8 +32,9 @@ const sendScheduleRemindersFlow = ai.defineFlow(
   async () => {
     try {
         const today = new Date();
+        // Set the start of next week to Monday
         const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
-        const endOfNextWeek = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+        const endOfNextWeek = endOfWeek(startOfNextWeek);
         
         const allEmployees = await getEmployees();
         const allSchedules = await getWorkSchedules();
@@ -69,13 +69,13 @@ const sendScheduleRemindersFlow = ai.defineFlow(
         if (employeesToNotify.length === 0) {
             return {
                 success: true,
-                message: "All employees have submitted their schedules for next week, or no employees need reminders.",
+                message: "All active employees have submitted their schedules for next week, or no employees need reminders.",
                 notifiedCount: 0,
             };
         }
         
         const notificationTitle = "Schedule Submission Reminder";
-        const notificationBody = "Please remember to submit your work schedule for the upcoming week.";
+        const notificationBody = `Please remember to submit your work schedule for the week of ${format(startOfNextWeek, 'MMM d')}.`;
 
         for (const employee of employeesToNotify) {
             if (employee.fcmToken) {

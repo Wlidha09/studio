@@ -289,6 +289,7 @@ export async function sendNotification(token: string, title: string, body: strin
     };
 
     try {
+        // The line below is commented out to prevent sending OS-level push notifications.
         // await getMessaging(adminApp).send(message);
     } catch (error) {
         console.error("Error sending notification:", error);
