@@ -86,12 +86,7 @@ export async function getDepartments(): Promise<Department[]> {
 
 export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     const querySnapshot = await getDocs(collection(db, 'leaveRequests'));
-    return querySnapshot.docs.map(doc => {
-      const data = convertDocTimestamps(doc);
-      // Omit employeeName from the returned object for this specific case
-      const { ...rest } = data;
-      return rest;
-    }) as LeaveRequest[];
+    return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as LeaveRequest);
 }
 
 
