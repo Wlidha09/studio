@@ -151,18 +151,19 @@ export default function LeaveRequestsTable({
     const visibleRequests = leaveRequests.filter(request => {
         const requestingEmployee = employeeMap.get(request.employeeId);
         
-        if (isOwner || isRH || role === 'Dev') {
-            return true;
+        if (role === 'Owner' || role === 'RH' || role === 'Dev') {
+            return true; // Owner, RH, and Dev see everything
         }
 
         if (role === 'Manager') {
             const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-            // A manager can see their own requests
+            // Manager can see their own requests
             if (request.employeeId === currentUser.id) return true;
-            // A manager can see pending requests from their team
+            // Manager can see pending requests from their team
             if (managerDepartment && requestingEmployee?.department === managerDepartment.name && request.status === 'Pending') {
                 return true;
             }
+            // A manager should not see other requests
             return false;
         }
 
@@ -180,7 +181,7 @@ export default function LeaveRequestsTable({
 
     return { pending, preApproved, approved, rejected };
 
-  }, [leaveRequests, currentUser, role, employeeMap, departments, isOwner, isRH]);
+  }, [leaveRequests, currentUser, role, employeeMap, departments]);
 
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
@@ -408,3 +409,5 @@ export default function LeaveRequestsTable({
     </>
   );
 }
+
+    
