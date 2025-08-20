@@ -95,6 +95,24 @@ export default function LoginPage() {
         }
         return true;
     }
+    
+    const handleAuthSuccess = async (user: User, isNewRegistration: boolean) => {
+      if (!user.email) return;
+
+      const isActive = await checkUserStatus(user.email);
+      if (!isActive) {
+        setIsLoading(false);
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      const existingEmployee = await getEmployeeByEmail(user.email);
+      if (!existingEmployee && (isNewRegistration || isGoogleLoading)) {
+          await createNewEmployeeProfile(user);
+      }
+      
+      router.push("/dashboard");
+    };
 
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -110,12 +128,6 @@ export default function LoginPage() {
         
         setIsLoading(true);
         setAuthError(null);
-
-        const isActive = await checkUserStatus(email);
-        if (!isActive) {
-            setIsLoading(false);
-            return;
-        }
         
         try {
             const user = isRegisterMode 
@@ -123,10 +135,7 @@ export default function LoginPage() {
                 : await signInWithEmail(email, password);
 
             if (user) {
-                 if (isRegisterMode) {
-                    await createNewEmployeeProfile(user);
-                 }
-                router.push("/dashboard");
+                await handleAuthSuccess(user, isRegisterMode);
             } else {
                  handleAuthError({code: 'auth/generic-error'});
             }
@@ -153,17 +162,7 @@ export default function LoginPage() {
                     return;
                 }
 
-                const isActive = await checkUserStatus(user.email);
-                if (!isActive) {
-                    setIsGoogleLoading(false);
-                    return;
-                }
-
-                const existingEmployee = await getEmployeeByEmail(user.email);
-                if (!existingEmployee) {
-                    await createNewEmployeeProfile(user);
-                }
-                router.push("/dashboard");
+                await handleAuthSuccess(user, false);
             }
         } catch (error) {
             handleAuthError(error);
@@ -238,3 +237,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
+    
