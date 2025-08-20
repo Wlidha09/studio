@@ -30,6 +30,7 @@ import {
   ShieldAlert,
   CalendarPlus,
   BellRing,
+  Bug,
 } from "lucide-react";
 import { useRole } from "@/contexts/role-context";
 import type { UserRole } from "@/lib/types";
@@ -120,6 +121,12 @@ const menuItems = [
     icon: Database,
     label: "Seed Database",
     pageKey: "seed-database" as PageKey,
+  },
+  {
+    href: "/dashboard/errors",
+    icon: Bug,
+    label: "Errors",
+    pageKey: "errors" as PageKey,
   },
 ];
 

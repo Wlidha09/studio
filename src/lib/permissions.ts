@@ -21,6 +21,7 @@ export type RolePermissions = Record<string, Permissions>;
 
 const allPermissions: PagePermissions = { view: true, create: true, edit: true, delete: true };
 const viewOnly: PagePermissions = { view: true, create: false, edit: false, delete: false };
+const noAccess: PagePermissions = { view: false, create: false, edit: false, delete: false };
 
 const initialPermissions: RolePermissions = {
     Owner: {
@@ -37,6 +38,7 @@ const initialPermissions: RolePermissions = {
         roles: allPermissions,
         'seed-database': { view: true },
         profile: { view: true },
+        errors: noAccess,
     },
     RH: {
         overview: { view: true },
@@ -52,6 +54,7 @@ const initialPermissions: RolePermissions = {
         roles: { view: false },
         'seed-database': { view: false },
         profile: { view: true },
+        errors: noAccess,
     },
     Manager: {
         overview: { view: true },
@@ -67,6 +70,7 @@ const initialPermissions: RolePermissions = {
         roles: { view: false },
         'seed-database': { view: false },
         profile: { view: true },
+        errors: noAccess,
     },
     Employee: {
         overview: { view: true },
@@ -82,6 +86,7 @@ const initialPermissions: RolePermissions = {
         roles: { view: false },
         'seed-database': { view: false },
         profile: { view: true },
+        errors: noAccess,
     },
     Dev: {
         overview: { view: true },
@@ -97,6 +102,7 @@ const initialPermissions: RolePermissions = {
         roles: allPermissions,
         'seed-database': allPermissions,
         profile: { view: true },
+        errors: allPermissions,
     },
 };
 

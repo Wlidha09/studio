@@ -13,5 +13,6 @@ export const pages = {
     roles: "Roles",
     'seed-database': "Seed Database",
     'send-schedule-reminders': "Send Reminders",
-    profile: "My Profile"
+    profile: "My Profile",
+    errors: "Errors",
 } as const;
