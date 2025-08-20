@@ -1,5 +1,4 @@
 
-
 export type UserRole = {
   id: string;
   name: string;
@@ -42,6 +41,7 @@ export type LeaveRequest = {
   startDate: string;
   endDate: string;
   status: "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
+  requestDate: string;
 };
 
 export type Holiday = {

@@ -42,6 +42,7 @@ import {
 import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useRole } from "@/contexts/role-context";
+import { format } from "date-fns";
 
 type Status = "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 
@@ -119,14 +120,15 @@ export default function LeaveRequestsTable({
     
     const isLeader = leaderNames.has(currentUser.name);
 
-    const newRequestData: Omit<LeaveRequest, "id"> = {
+    const newRequestData: Omit<LeaveRequest, "id" | "requestDate"> & { requestDate?: string } = {
       employeeId: currentUser.id,
       status: isLeader ? "ApprovedByManager" : "Pending", // Skip manager approval for leaders
       ...leaveData,
+      requestDate: format(new Date(), 'yyyy-MM-dd'),
     };
 
     try {
-      const newRequest = await addLeaveRequest(newRequestData);
+      const newRequest = await addLeaveRequest(newRequestData as Omit<LeaveRequest, 'id'>);
       setLeaveRequests([...leaveRequests, newRequest]);
       toast({
         title: "Leave Request Submitted",
@@ -240,6 +242,7 @@ export default function LeaveRequestsTable({
           <TableHeader>
             <TableRow>
               <TableHead>Employee</TableHead>
+              <TableHead>Request Date</TableHead>
               <TableHead>Leave Type</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Status</TableHead>
@@ -257,6 +260,7 @@ export default function LeaveRequestsTable({
               return (
               <TableRow key={request.id}>
                 <TableCell>{employeeName}</TableCell>
+                <TableCell>{request.requestDate}</TableCell>
                 <TableCell>{request.leaveType}</TableCell>
                 <TableCell>
                   {request.startDate} to {request.endDate}
