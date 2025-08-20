@@ -120,11 +120,10 @@ export default function LeaveRequestsTable({
     
     const isLeader = leaderNames.has(currentUser.name);
 
-    const newRequestData: Omit<LeaveRequest, "id" | "requestDate"> & { requestDate?: string } = {
+    const newRequestData: Omit<LeaveRequest, "id" | "createdAt"> = {
       employeeId: currentUser.id,
       status: isLeader ? "ApprovedByManager" : "Pending", // Skip manager approval for leaders
       ...leaveData,
-      requestDate: format(new Date(), 'yyyy-MM-dd'),
     };
 
     try {
@@ -260,7 +259,7 @@ export default function LeaveRequestsTable({
               return (
               <TableRow key={request.id}>
                 <TableCell>{employeeName}</TableCell>
-                <TableCell>{request.requestDate}</TableCell>
+                <TableCell>{request.createdAt}</TableCell>
                 <TableCell>{request.leaveType}</TableCell>
                 <TableCell>
                   {request.startDate} to {request.endDate}

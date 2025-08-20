@@ -29,8 +29,8 @@ export const departments: Omit<Department, 'id'>[] = [
 ];
 
 export const leaveRequests: Omit<LeaveRequest, 'id'>[] = [
-  { employeeId: "2", leaveType: "Vacation", startDate: "2024-08-20", endDate: "2024-08-25", status: "Pending" },
-  { employeeId: "3", leaveType: "Sick Leave", startDate: "2024-07-22", endDate: "2024-07-22", status: "Approved" },
-  { employeeId: "7", leaveType: "Personal", startDate: "2024-09-01", endDate: "2024-09-02", status: "Rejected" },
-  { employeeId: "5", leaveType: "Vacation", startDate: "2024-10-10", endDate: "2024-10-20", status: "Pending" },
+  { employeeId: "2", leaveType: "Vacation", startDate: "2024-08-20", endDate: "2024-08-25", status: "Pending", createdAt: "2024-07-15" },
+  { employeeId: "3", leaveType: "Sick Leave", startDate: "2024-07-22", endDate: "2024-07-22", status: "Approved", createdAt: "2024-07-20" },
+  { employeeId: "7", leaveType: "Personal", startDate: "2024-09-01", endDate: "2024-09-02", status: "Rejected", createdAt: "2024-08-01" },
+  { employeeId: "5", leaveType: "Vacation", startDate: "2024-10-10", endDate: "2024-10-20", status: "Pending", createdAt: "2024-08-10" },
 ];
