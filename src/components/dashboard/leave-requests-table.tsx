@@ -146,17 +146,34 @@ export default function LeaveRequestsTable({
   };
 
   const filteredRequests = useMemo(() => {
+    if (!currentUser) return [];
+
     return leaveRequests.filter(request => {
-      if (!currentUser) return false;
+      // Owner, RH, and Dev can see all requests
       if (role === 'Owner' || role === 'Dev' || role === 'RH') {
         return true;
       }
+      
+      // Manager can see requests from their department if status is 'Pending', plus their own requests
       if (role === 'Manager') {
         const requestingEmployee = employeeMap.get(request.employeeId);
         const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-        return requestingEmployee?.department === managerDepartment?.name;
+        
+        // Show their own requests regardless of status (except ApprovedByManager)
+        if (request.employeeId === currentUser.id) {
+           return request.status !== 'ApprovedByManager';
+        }
+        
+        // Show team members' requests ONLY if pending manager approval
+        return requestingEmployee?.department === managerDepartment?.name && request.status === 'Pending';
       }
-      return request.employeeId === currentUser?.id;
+
+      // Regular employee can only see their own requests, but hide when pending final approval
+      if (role === 'Employee') {
+          return request.employeeId === currentUser.id && request.status !== 'ApprovedByManager';
+      }
+
+      return false; // Default to no visibility
     });
   }, [leaveRequests, currentUser, role, employeeMap, departments]);
 
