@@ -190,14 +190,15 @@ export default function LeaveRequestsTable({
   }
   
   const getRHApprovalAction = (request: LeaveRequest) => {
-     if ((!isRH && !isOwner) || request.status !== "ApprovedByManager") return null;
-
-     return (
-        <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
-            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-            Approve (Final)
-        </DropdownMenuItem>
-     )
+     if ((isRH || isOwner) && request.status === "ApprovedByManager") {
+        return (
+            <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                Approve (Final)
+            </DropdownMenuItem>
+        );
+     }
+     return null;
   }
 
   const getRejectAction = (request: LeaveRequest) => {
@@ -391,4 +392,3 @@ export default function LeaveRequestsTable({
     </>
   );
 }
-
