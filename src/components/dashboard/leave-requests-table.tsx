@@ -148,32 +148,26 @@ export default function LeaveRequestsTable({
   const categorizedRequests = useMemo(() => {
     if (!currentUser) return { pending: [], preApproved: [], approved: [], rejected: [] };
 
-    const visibleRequests = leaveRequests.filter(request => {
-        const requestingEmployee = employeeMap.get(request.employeeId);
-        
-        if (role === 'Owner' || role === 'RH' || role === 'Dev') {
-            return true; // Owner, RH, and Dev see everything
-        }
+    let visibleRequests: LeaveRequest[] = [];
 
-        if (role === 'Manager') {
-            const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-            // Manager can see their own requests
+    if (role === 'Owner' || role === 'RH' || role === 'Dev') {
+        visibleRequests = leaveRequests;
+    } else if (role === 'Manager') {
+        const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+        visibleRequests = leaveRequests.filter(request => {
+            const requestingEmployee = employeeMap.get(request.employeeId);
+            // Manager sees their own requests
             if (request.employeeId === currentUser.id) return true;
-            // Manager can see pending requests from their team
+            // Manager sees pending requests from their team
             if (managerDepartment && requestingEmployee?.department === managerDepartment.name && request.status === 'Pending') {
                 return true;
             }
-            // A manager should not see other requests
             return false;
-        }
-
-        if (role === 'Employee') {
-            return request.employeeId === currentUser.id;
-        }
-
-        return false;
-    });
-
+        });
+    } else { // Employee
+        visibleRequests = leaveRequests.filter(request => request.employeeId === currentUser.id);
+    }
+    
     const pending = visibleRequests.filter(req => req.status === "Pending");
     const preApproved = visibleRequests.filter(req => req.status === "ApprovedByManager");
     const approved = visibleRequests.filter(req => req.status === "Approved");
@@ -409,5 +403,3 @@ export default function LeaveRequestsTable({
     </>
   );
 }
-
-    
