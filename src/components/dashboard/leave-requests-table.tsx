@@ -150,14 +150,20 @@ export default function LeaveRequestsTable({
 
     const visibleRequests = leaveRequests.filter(request => {
         const requestingEmployee = employeeMap.get(request.employeeId);
-        const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+        
+        if (isOwner || isRH || role === 'Dev') {
+            return true;
+        }
 
-        if (isOwner || isRH || role === 'Dev') return true;
-
-        if (role === 'Manager' && managerDepartment) {
-            // Manager sees their own requests and pending requests from their team
+        if (role === 'Manager') {
+            const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+            // A manager can see their own requests
             if (request.employeeId === currentUser.id) return true;
-            return requestingEmployee?.department === managerDepartment.name && request.status === 'Pending';
+            // A manager can see pending requests from their team
+            if (managerDepartment && requestingEmployee?.department === managerDepartment.name && request.status === 'Pending') {
+                return true;
+            }
+            return false;
         }
 
         if (role === 'Employee') {
