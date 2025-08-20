@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -42,7 +42,8 @@ import {
 import { addLeaveRequest, updateLeaveRequestStatus } from "@/lib/firestore";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useRole } from "@/contexts/role-context";
-import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 type Status = "Pending" | "ApprovedByManager" | "Approved" | "Rejected";
 
@@ -144,29 +145,27 @@ export default function LeaveRequestsTable({
     setIsDialogOpen(false);
   };
 
+  const filteredRequests = useMemo(() => {
+    return leaveRequests.filter(request => {
+      if (!currentUser) return false;
+      if (role === 'Owner' || role === 'Dev' || role === 'RH') {
+        return true;
+      }
+      if (role === 'Manager') {
+        const requestingEmployee = employeeMap.get(request.employeeId);
+        const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+        return requestingEmployee?.department === managerDepartment?.name;
+      }
+      return request.employeeId === currentUser?.id;
+    });
+  }, [leaveRequests, currentUser, role, employeeMap, departments]);
 
-  const filteredRequests = leaveRequests.filter(request => {
-    if (!currentUser) return false;
-    // Owner, Dev, and RH can see all requests
-    if (role === 'Owner' || role === 'Dev' || role === 'RH') {
-      return true;
-    }
-    
-    // Managers see requests from their own department
-    if (role === 'Manager') {
-      const requestingEmployee = employeeMap.get(request.employeeId);
-      // The current user must be a department leader to be considered a manager for this check
-      const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-      return requestingEmployee?.department === managerDepartment?.name;
-    }
-    
-    // Employees should only see their own requests
-    return request.employeeId === currentUser?.id;
-  });
-
-  const sortedRequests = filteredRequests.sort(
-    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-  );
+  const categorizedRequests = useMemo(() => {
+    const pending = filteredRequests.filter(req => req.status === "Pending" || req.status === "ApprovedByManager");
+    const approved = filteredRequests.filter(req => req.status === "Approved");
+    const rejected = filteredRequests.filter(req => req.status === "Rejected");
+    return { pending, approved, rejected };
+  }, [filteredRequests]);
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
     if (!currentUser || request.status !== "Pending") return null;
@@ -177,8 +176,6 @@ export default function LeaveRequestsTable({
     const employeeDepartment = departmentMap.get(requestingEmployee.department);
     if (!employeeDepartment) return null;
 
-    // The current user must be the leader of the requesting employee's department
-    // and not the same person making the request.
     if (employeeDepartment.teamLeader === currentUser.name && request.employeeId !== currentUser.id) {
       return (
         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
@@ -214,7 +211,6 @@ export default function LeaveRequestsTable({
     const isLeaderOfDepartment = employeeDepartment.teamLeader === currentUser.name;
     const isRequestFromSelf = request.employeeId === currentUser.id;
 
-    // Reject action available to department manager (if not their own request), or RH/Owner
     if ((isLeaderOfDepartment && !isRequestFromSelf) || isRH || isOwner) {
         return (
             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")}>
@@ -227,36 +223,28 @@ export default function LeaveRequestsTable({
     return null;
   }
 
-  return (
-    <>
-      <div className="flex justify-end mb-4">
-        {canCreate && (
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
-          </Button>
-        )}
-      </div>
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Employee</TableHead>
-              <TableHead>Request Date</TableHead>
-              <TableHead>Leave Type</TableHead>
-              <TableHead>Dates</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedRequests.map((request) => {
-              const managerApprovalAction = getManagerApprovalAction(request);
-              const rhApprovalAction = getRHApprovalAction(request);
-              const rejectAction = getRejectAction(request);
-              const canPerformAction = managerApprovalAction || rhApprovalAction || rejectAction;
-              const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
+  const renderTable = (requests: LeaveRequest[]) => (
+    <div className="border rounded-lg">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Employee</TableHead>
+            <TableHead>Request Date</TableHead>
+            <TableHead>Leave Type</TableHead>
+            <TableHead>Dates</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {requests.map((request) => {
+            const managerApprovalAction = getManagerApprovalAction(request);
+            const rhApprovalAction = getRHApprovalAction(request);
+            const rejectAction = getRejectAction(request);
+            const canPerformAction = managerApprovalAction || rhApprovalAction || rejectAction;
+            const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
 
-              return (
+            return (
               <TableRow key={request.id}>
                 <TableCell>{employeeName}</TableCell>
                 <TableCell>{request.createdAt}</TableCell>
@@ -265,10 +253,7 @@ export default function LeaveRequestsTable({
                   {request.startDate} to {request.endDate}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={statusColors[request.status]}
-                  >
+                  <Badge variant="outline" className={statusColors[request.status]}>
                     {request.status}
                   </Badge>
                 </TableCell>
@@ -279,10 +264,7 @@ export default function LeaveRequestsTable({
                         <Button
                           variant="ghost"
                           className="h-8 w-8 p-0"
-                          disabled={
-                            request.status === "Approved" ||
-                            request.status === "Rejected"
-                          }
+                          disabled={request.status === "Approved" || request.status === "Rejected"}
                         >
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
@@ -297,11 +279,50 @@ export default function LeaveRequestsTable({
                   )}
                 </TableCell>
               </TableRow>
-            )})}
-          </TableBody>
-        </Table>
-      </div>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
 
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+           <h2 className="text-2xl font-bold tracking-tight">Leave Requests</h2>
+           {canCreate && (
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Submit Leave Request
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="pending">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="pending">
+                Pending <Badge variant="secondary" className="ml-2">{categorizedRequests.pending.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="approved">
+                Approved <Badge variant="secondary" className="ml-2">{categorizedRequests.approved.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="rejected">
+                Rejected <Badge variant="secondary" className="ml-2">{categorizedRequests.rejected.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending" className="mt-4">
+              {renderTable(categorizedRequests.pending.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))}
+            </TabsContent>
+            <TabsContent value="approved" className="mt-4">
+              {renderTable(categorizedRequests.approved.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))}
+            </TabsContent>
+            <TabsContent value="rejected" className="mt-4">
+              {renderTable(categorizedRequests.rejected.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>

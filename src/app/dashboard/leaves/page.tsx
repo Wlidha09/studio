@@ -6,12 +6,10 @@ export default async function LeavesPage() {
   const employees = await getEmployees();
   const departments = await getDepartments();
   return (
-    <div>
-      <LeaveRequestsTable
-        initialLeaveRequests={leaveRequests}
-        employees={employees}
-        departments={departments}
-      />
-    </div>
+    <LeaveRequestsTable
+      initialLeaveRequests={leaveRequests}
+      employees={employees}
+      departments={departments}
+    />
   );
 }
