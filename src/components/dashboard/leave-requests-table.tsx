@@ -161,10 +161,11 @@ export default function LeaveRequestsTable({
   }, [leaveRequests, currentUser, role, employeeMap, departments]);
 
   const categorizedRequests = useMemo(() => {
-    const pending = filteredRequests.filter(req => req.status === "Pending" || req.status === "ApprovedByManager");
+    const pending = filteredRequests.filter(req => req.status === "Pending");
+    const preApproved = filteredRequests.filter(req => req.status === "ApprovedByManager");
     const approved = filteredRequests.filter(req => req.status === "Approved");
     const rejected = filteredRequests.filter(req => req.status === "Rejected");
-    return { pending, approved, rejected };
+    return { pending, preApproved, approved, rejected };
   }, [filteredRequests]);
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
@@ -299,9 +300,12 @@ export default function LeaveRequestsTable({
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="pending">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="pending">
                 Pending <Badge variant="secondary" className="ml-2">{categorizedRequests.pending.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="preApproved">
+                Pre-Approved <Badge variant="secondary" className="ml-2">{categorizedRequests.preApproved.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="approved">
                 Approved <Badge variant="secondary" className="ml-2">{categorizedRequests.approved.length}</Badge>
@@ -312,6 +316,9 @@ export default function LeaveRequestsTable({
             </TabsList>
             <TabsContent value="pending" className="mt-4">
               {renderTable(categorizedRequests.pending.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))}
+            </TabsContent>
+            <TabsContent value="preApproved" className="mt-4">
+              {renderTable(categorizedRequests.preApproved.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))}
             </TabsContent>
             <TabsContent value="approved" className="mt-4">
               {renderTable(categorizedRequests.approved.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))}
@@ -384,3 +391,4 @@ export default function LeaveRequestsTable({
     </>
   );
 }
+
