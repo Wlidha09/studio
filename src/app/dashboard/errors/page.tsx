@@ -4,15 +4,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Bug } from "lucide-react";
+import { Bug, ArrowUpDown } from "lucide-react";
+import { useState } from "react";
+import { format } from "date-fns";
 
 // This is mock data. In a real application, you would fetch this from a logging service.
-const errors = [
-  { id: 1, message: "Failed to fetch user data in ProfilePage", file: "profile/page.tsx", count: 12, status: "unresolved", level: "error" },
-  { id: 2, message: "Cannot read properties of null (reading 'fcmToken')", file: "send-schedule-reminders.ts", count: 5, status: "resolved", level: "error" },
-  { id: 3, message: "Date parsing failed for holiday import", file: "import-holidays.ts", count: 3, status: "ignored", level: "warning" },
-  { id: 4, message: "Invalid credentials on login", file: "login/page.tsx", count: 28, status: "unresolved", level: "info" },
+const initialErrors = [
+  { id: 1, message: "Failed to fetch user data in ProfilePage", file: "profile/page.tsx", count: 12, status: "unresolved", level: "error", timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+  { id: 2, message: "Cannot read properties of null (reading 'fcmToken')", file: "send-schedule-reminders.ts", count: 5, status: "resolved", level: "error", timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 3, message: "Date parsing failed for holiday import", file: "import-holidays.ts", count: 3, status: "ignored", level: "warning", timestamp: new Date().toISOString() },
+  { id: 4, message: "Invalid credentials on login", file: "login/page.tsx", count: 28, status: "unresolved", level: "info", timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
 ];
+
+type SortKey = "level" | "message" | "file" | "count" | "status" | "timestamp";
 
 const levelColors: Record<string, string> = {
   error: "bg-red-500 text-white",
@@ -26,8 +30,38 @@ const statusColors: Record<string, string> = {
   ignored: "bg-gray-200 text-gray-800",
 };
 
-
 export default function ErrorsPage() {
+  const [errors, setErrors] = useState(initialErrors);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'timestamp', direction: 'descending' });
+
+  const sortedErrors = [...errors].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'ascending' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'ascending' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const requestSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key: SortKey) => {
+    if (sortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4 opacity-50" />;
+    }
+    return sortConfig.direction === 'descending' ? '▼' : '▲';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -43,16 +77,28 @@ export default function ErrorsPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Level</TableHead>
+                        <TableHead className="cursor-pointer" onClick={() => requestSort('timestamp')}>
+                          <div className="flex items-center gap-2">Date & Time {getSortIndicator('timestamp')}</div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer" onClick={() => requestSort('level')}>
+                          <div className="flex items-center gap-2">Level {getSortIndicator('level')}</div>
+                        </TableHead>
                         <TableHead>Message</TableHead>
                         <TableHead>Source File</TableHead>
-                        <TableHead className="text-center">Count</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead className="text-center cursor-pointer" onClick={() => requestSort('count')}>
+                          <div className="flex items-center justify-center gap-2">Count {getSortIndicator('count')}</div>
+                        </TableHead>
+                        <TableHead className="text-center cursor-pointer" onClick={() => requestSort('status')}>
+                          <div className="flex items-center justify-center gap-2">Status {getSortIndicator('status')}</div>
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {errors.map((error) => (
+                    {sortedErrors.map((error) => (
                         <TableRow key={error.id}>
+                            <TableCell>
+                                {format(new Date(error.timestamp), "yyyy-MM-dd HH:mm:ss")}
+                            </TableCell>
                             <TableCell>
                                 <Badge className={levelColors[error.level]}>{error.level}</Badge>
                             </TableCell>
