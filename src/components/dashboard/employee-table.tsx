@@ -92,12 +92,13 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
       return employees;
     }
 
-    const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-
-    if (role === 'Manager' && managerDepartment) {
-      return employees.filter(e => e.department === managerDepartment.name);
+    if (role === 'Manager') {
+        const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
+        if (managerDepartment) {
+            return employees.filter(e => e.department === managerDepartment.name);
+        }
     }
-
+    
     // For regular employees, show employees in the same department
     return employees.filter(e => e.department === currentUser.department);
 

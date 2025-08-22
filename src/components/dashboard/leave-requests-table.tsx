@@ -148,35 +148,28 @@ export default function LeaveRequestsTable({
     const defaultCategories = { pending: [], preApproved: [], approved: [], rejected: [] };
     if (!currentUser) return defaultCategories;
 
-    const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-    
-    return leaveRequests.reduce((acc, request) => {
-      const employeeOfRequest = employeeMap.get(request.employeeId);
-      const isMyRequest = request.employeeId === currentUser.id;
-      const isMyTeamRequest = managerDepartment && employeeOfRequest?.department === managerDepartment.name && !isMyRequest;
+    const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
 
-      let isVisible = false;
+    const filtered = leaveRequests.filter(request => {
+        if (isOwner || isRH || role === 'Dev') return true;
 
-      if (isOwner || isRH || role === 'Dev') {
-        isVisible = true;
-      } else if (role === 'Manager') {
-        // A manager sees their own requests and pending requests from their team
-        if (isMyRequest) isVisible = true;
-        if (isMyTeamRequest && request.status === 'Pending') isVisible = true;
-      } else { // Employee
-        // An employee only sees their own requests
-        if (isMyRequest) isVisible = true;
-      }
+        const employeeOfRequest = employeeMap.get(request.employeeId);
+        const isMyRequest = request.employeeId === currentUser.id;
 
-      if (isVisible) {
+        if (role === 'Manager') {
+            const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
+            return isMyRequest || isMyTeamRequest;
+        }
+
+        return isMyRequest;
+    });
+
+    return filtered.reduce((acc, request) => {
         if (request.status === "Pending") acc.pending.push(request);
         else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
         else if (request.status === "Approved") acc.approved.push(request);
         else if (request.status === "Rejected") acc.rejected.push(request);
-      }
-
-      return acc;
-
+        return acc;
     }, defaultCategories);
 
   }, [leaveRequests, currentUser, role, employeeMap, departments, isOwner, isRH]);
@@ -227,8 +220,8 @@ export default function LeaveRequestsTable({
             canReject = true;
         }
     }
-    // Owner/RH can reject pre-approved requests
-    if ((isOwner || isRH) && request.status === 'ApprovedByManager') {
+    // Owner/RH can reject pre-approved or pending requests
+    if ((isOwner || isRH) && (request.status === 'ApprovedByManager' || request.status === 'Pending')) {
         canReject = true;
     }
     
