@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -73,13 +73,19 @@ export default function LeaveRequestsTable({
   const { hasPermission } = usePermissions();
   const { role } = useRole();
 
-  const canCreate = hasPermission("leaves", "create");
-  const canEdit = hasPermission("leaves", "edit");
   const isRH = role === 'RH';
   const isOwner = role === 'Owner';
+  const isManager = role === 'Manager';
+
+  const canCreate = hasPermission("leaves", "create");
+  const canEdit = hasPermission("leaves", "edit");
   
   const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
-  const departmentMap = useMemo(() => new Map(departments.map(d => [d.name, d.teamLeader])), [departments]);
+
+  useEffect(() => {
+    setLeaveRequests(initialLeaveRequests);
+  }, [initialLeaveRequests]);
+
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -120,10 +126,11 @@ export default function LeaveRequestsTable({
     
     const isLeader = !!departments.find(d => d.teamLeader === currentUser.name);
 
-    const newRequestData: Omit<LeaveRequest, "id" | "createdAt"> = {
+    const newRequestData: Omit<LeaveRequest, "id"> = {
       employeeId: currentUser.id,
       status: isLeader ? "ApprovedByManager" : "Pending", // Skip manager approval for leaders
       ...leaveData,
+      createdAt: new Date().toISOString(),
     };
 
     try {
@@ -148,23 +155,27 @@ export default function LeaveRequestsTable({
     const defaultCategories = { pending: [], preApproved: [], approved: [], rejected: [] };
     if (!currentUser) return defaultCategories;
 
-    const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
+    let filteredRequests: LeaveRequest[];
 
-    const filtered = leaveRequests.filter(request => {
-        if (isOwner || isRH || role === 'Dev') return true;
-
+    if (isOwner || isRH || role === 'Dev') {
+      // Owner, RH, and Dev can see all requests
+      filteredRequests = leaveRequests;
+    } else if (isManager) {
+      // Manager can see their own requests and pending requests from their team
+      const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
+      filteredRequests = leaveRequests.filter(request => {
         const employeeOfRequest = employeeMap.get(request.employeeId);
         const isMyRequest = request.employeeId === currentUser.id;
-
-        if (role === 'Manager') {
-            const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
-            return isMyRequest || isMyTeamRequest;
-        }
-
-        return isMyRequest;
-    });
-
-    return filtered.reduce((acc, request) => {
+        const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
+        // Show my requests (all statuses) OR pending requests from my team
+        return isMyRequest || (isMyTeamRequest && request.status === 'Pending');
+      });
+    } else {
+      // Employee can only see their own requests
+      filteredRequests = leaveRequests.filter(request => request.employeeId === currentUser.id);
+    }
+    
+    return filteredRequests.reduce((acc, request) => {
         if (request.status === "Pending") acc.pending.push(request);
         else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
         else if (request.status === "Approved") acc.approved.push(request);
@@ -172,17 +183,19 @@ export default function LeaveRequestsTable({
         return acc;
     }, defaultCategories);
 
-  }, [leaveRequests, currentUser, role, employeeMap, departments, isOwner, isRH]);
+  }, [leaveRequests, currentUser, role, isOwner, isRH, isManager, employeeMap, departments]);
 
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
-    if (!currentUser || role !== 'Manager' || request.status !== 'Pending') return null;
+    if (!currentUser || !isManager || request.status !== 'Pending') return null;
 
     const requestingEmployee = employeeMap.get(request.employeeId);
     if (!requestingEmployee || requestingEmployee.id === currentUser.id) return null;
 
-    const managerForDepartment = departmentMap.get(requestingEmployee.department);
-    if (managerForDepartment === currentUser.name) {
+    const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
+    const employeeDepartment = requestingEmployee.department;
+    
+    if (managerDepartmentName === employeeDepartment) {
       return (
         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
           <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -214,9 +227,9 @@ export default function LeaveRequestsTable({
 
     let canReject = false;
     // Manager can reject pending requests from their team
-    if (role === 'Manager' && request.status === 'Pending') {
-        const managerForDepartment = departmentMap.get(requestingEmployee.department);
-        if (managerForDepartment === currentUser.name && requestingEmployee.id !== currentUser.id) {
+    if (isManager && request.status === 'Pending') {
+        const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
+        if (requestingEmployee.department === managerDepartmentName && requestingEmployee.id !== currentUser.id) {
             canReject = true;
         }
     }
@@ -251,50 +264,58 @@ export default function LeaveRequestsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {requests.map((request) => {
-            const managerApprovalAction = getManagerApprovalAction(request);
-            const rhApprovalAction = getRHApprovalAction(request);
-            const rejectAction = getRejectAction(request);
-            const canPerformAction = canEdit && (managerApprovalAction || rhApprovalAction || rejectAction);
-            const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
+          {requests.length === 0 ? (
+            <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                    No requests found.
+                </TableCell>
+            </TableRow>
+          ) : (
+            requests.map((request) => {
+              const managerApprovalAction = getManagerApprovalAction(request);
+              const rhApprovalAction = getRHApprovalAction(request);
+              const rejectAction = getRejectAction(request);
+              const canPerformAction = canEdit && (managerApprovalAction || rhApprovalAction || rejectAction);
+              const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
 
-            return (
-              <TableRow key={request.id}>
-                <TableCell>{employeeName}</TableCell>
-                <TableCell>{request.createdAt}</TableCell>
-                <TableCell>{request.leaveType}</TableCell>
-                <TableCell>
-                  {request.startDate} to {request.endDate}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={statusColors[request.status]}>
-                    {request.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {canPerformAction && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          disabled={request.status === "Approved" || request.status === "Rejected"}
-                        >
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {managerApprovalAction}
-                        {rhApprovalAction}
-                        {rejectAction}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
+              return (
+                <TableRow key={request.id}>
+                  <TableCell>{employeeName}</TableCell>
+                  <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{request.leaveType}</TableCell>
+                  <TableCell>
+                    {request.startDate} to {request.endDate}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={statusColors[request.status]}>
+                      {request.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {canPerformAction && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            disabled={request.status === "Approved" || request.status === "Rejected"}
+                          >
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {managerApprovalAction}
+                          {rhApprovalAction}
+                          {rejectAction}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
         </TableBody>
       </Table>
     </div>
@@ -318,7 +339,7 @@ export default function LeaveRequestsTable({
                 Pending <Badge variant="secondary" className="ml-2">{categorizedRequests.pending.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="preApproved">
-                Pre-Approved <Badge variant="secondary" className="ml-2">{categorizedRequests.preApproved.length}</Badge>
+                Approved By Manager <Badge variant="secondary" className="ml-2">{categorizedRequests.preApproved.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="approved">
                 Approved <Badge variant="secondary" className="ml-2">{categorizedRequests.approved.length}</Badge>
