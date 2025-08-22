@@ -79,8 +79,7 @@ export default function LeaveRequestsTable({
   const isOwner = role === 'Owner';
   
   const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
-  const departmentMap = useMemo(() => new Map(departments.map(d => [d.name, d])), [departments]);
-  const leaderNames = useMemo(() => new Set(departments.map(d => d.teamLeader)), [departments]);
+  const departmentMap = useMemo(() => new Map(departments.map(d => [d.name, d.teamLeader])), [departments]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     try {
@@ -119,7 +118,7 @@ export default function LeaveRequestsTable({
       endDate: formData.get("endDate") as string,
     };
     
-    const isLeader = leaderNames.has(currentUser.name);
+    const isLeader = !!departments.find(d => d.teamLeader === currentUser.name);
 
     const newRequestData: Omit<LeaveRequest, "id" | "createdAt"> = {
       employeeId: currentUser.id,
@@ -149,46 +148,48 @@ export default function LeaveRequestsTable({
     const defaultCategories = { pending: [], preApproved: [], approved: [], rejected: [] };
     if (!currentUser) return defaultCategories;
 
-    let visibleRequests: LeaveRequest[] = [];
-
-    if (role === 'Owner' || role === 'RH' || role === 'Dev') {
-        visibleRequests = leaveRequests;
-    } else if (role === 'Manager') {
-        const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
-        visibleRequests = leaveRequests.filter(request => {
-            const requestingEmployee = employeeMap.get(request.employeeId);
-            // Manager sees their own requests
-            if (request.employeeId === currentUser.id) return true;
-            // Manager sees pending requests from their team
-            if (managerDepartment && requestingEmployee?.department === managerDepartment.name && request.status === 'Pending') {
-                return true;
-            }
-            return false;
-        });
-    } else { // Employee
-        visibleRequests = leaveRequests.filter(request => request.employeeId === currentUser.id);
-    }
+    const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
     
-    const pending = visibleRequests.filter(req => req.status === "Pending");
-    const preApproved = visibleRequests.filter(req => req.status === "ApprovedByManager");
-    const approved = visibleRequests.filter(req => req.status === "Approved");
-    const rejected = visibleRequests.filter(req => req.status === "Rejected");
+    return leaveRequests.reduce((acc, request) => {
+      const employeeOfRequest = employeeMap.get(request.employeeId);
+      const isMyRequest = request.employeeId === currentUser.id;
+      const isMyTeamRequest = managerDepartment && employeeOfRequest?.department === managerDepartment.name && !isMyRequest;
 
-    return { pending, preApproved, approved, rejected };
+      let isVisible = false;
 
-  }, [leaveRequests, currentUser, role, employeeMap, departments]);
+      if (isOwner || isRH || role === 'Dev') {
+        isVisible = true;
+      } else if (role === 'Manager') {
+        // A manager sees their own requests and pending requests from their team
+        if (isMyRequest) isVisible = true;
+        if (isMyTeamRequest && request.status === 'Pending') isVisible = true;
+      } else { // Employee
+        // An employee only sees their own requests
+        if (isMyRequest) isVisible = true;
+      }
+
+      if (isVisible) {
+        if (request.status === "Pending") acc.pending.push(request);
+        else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
+        else if (request.status === "Approved") acc.approved.push(request);
+        else if (request.status === "Rejected") acc.rejected.push(request);
+      }
+
+      return acc;
+
+    }, defaultCategories);
+
+  }, [leaveRequests, currentUser, role, employeeMap, departments, isOwner, isRH]);
 
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
-    if (!currentUser || request.status !== "Pending" || role !== 'Manager') return null;
+    if (!currentUser || role !== 'Manager' || request.status !== 'Pending') return null;
 
     const requestingEmployee = employeeMap.get(request.employeeId);
-    if (!requestingEmployee) return null;
+    if (!requestingEmployee || requestingEmployee.id === currentUser.id) return null;
 
-    const employeeDepartment = departmentMap.get(requestingEmployee.department);
-    if (!employeeDepartment) return null;
-
-    if (employeeDepartment.teamLeader === currentUser.name && request.employeeId !== currentUser.id) {
+    const managerForDepartment = departmentMap.get(requestingEmployee.department);
+    if (managerForDepartment === currentUser.name) {
       return (
         <DropdownMenuItem onClick={() => handleStatusChange(request.id, "ApprovedByManager")}>
           <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -201,7 +202,7 @@ export default function LeaveRequestsTable({
   }
   
   const getRHApprovalAction = (request: LeaveRequest) => {
-     if ((isRH || isOwner) && request.status === "ApprovedByManager") {
+     if ((isOwner || isRH) && request.status === "ApprovedByManager") {
         return (
             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -217,15 +218,21 @@ export default function LeaveRequestsTable({
 
     const requestingEmployee = employeeMap.get(request.employeeId);
     if (!requestingEmployee) return null;
+
+    let canReject = false;
+    // Manager can reject pending requests from their team
+    if (role === 'Manager' && request.status === 'Pending') {
+        const managerForDepartment = departmentMap.get(requestingEmployee.department);
+        if (managerForDepartment === currentUser.name && requestingEmployee.id !== currentUser.id) {
+            canReject = true;
+        }
+    }
+    // Owner/RH can reject pre-approved requests
+    if ((isOwner || isRH) && request.status === 'ApprovedByManager') {
+        canReject = true;
+    }
     
-    const employeeDepartment = departmentMap.get(requestingEmployee.department);
-    if (!employeeDepartment) return null;
-
-    const isManagerOfRequestingEmployee = employeeDepartment.teamLeader === currentUser.name;
-    const isPendingManagerAction = request.status === 'Pending' && role === 'Manager' && isManagerOfRequestingEmployee;
-    const isPendingFinalAction = request.status === 'ApprovedByManager' && (isOwner || isRH);
-
-    if (isPendingManagerAction || isPendingFinalAction) {
+    if (canReject) {
         return (
             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Rejected")} className="text-destructive">
                 <XCircle className="mr-2 h-4 w-4" />
@@ -255,7 +262,7 @@ export default function LeaveRequestsTable({
             const managerApprovalAction = getManagerApprovalAction(request);
             const rhApprovalAction = getRHApprovalAction(request);
             const rejectAction = getRejectAction(request);
-            const canPerformAction = managerApprovalAction || rhApprovalAction || rejectAction;
+            const canPerformAction = canEdit && (managerApprovalAction || rhApprovalAction || rejectAction);
             const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
 
             return (
@@ -272,7 +279,7 @@ export default function LeaveRequestsTable({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  {canEdit && canPerformAction && (
+                  {canPerformAction && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
