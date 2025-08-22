@@ -155,33 +155,34 @@ export default function LeaveRequestsTable({
   const categorizedRequests = useMemo(() => {
     const defaultCategories = { pending: [], preApproved: [], approved: [], rejected: [] };
     if (!currentUser) return defaultCategories;
+
+    const managerDepartmentName = isManager ? departments.find(d => d.teamLeader === currentUser.name)?.name : undefined;
+
+    const visibleRequests = leaveRequests.filter(request => {
+      if (isOwner || isRH || isDev) {
+        return true;
+      }
+      const employeeOfRequest = employeeMap.get(request.employeeId);
+      const isMyRequest = request.employeeId === currentUser.id;
+
+      if (isManager) {
+        const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
+        return isMyRequest || (isMyTeamRequest && request.status === 'Pending');
+      }
+      
+      // Default employee view
+      return isMyRequest;
+    });
     
-    return leaveRequests.reduce((acc, request) => {
-        const employeeOfRequest = employeeMap.get(request.employeeId);
-        const isMyRequest = request.employeeId === currentUser.id;
-        let isVisible = false;
-
-        if (isOwner || isRH || isDev) {
-            isVisible = true;
-        } else if (isManager) {
-            const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
-            const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
-            isVisible = isMyRequest || (isMyTeamRequest && request.status === 'Pending');
-        } else { // Employee
-            isVisible = isMyRequest;
-        }
-        
-        if (isVisible) {
-            if (request.status === "Pending") acc.pending.push(request);
-            else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
-            else if (request.status === "Approved") acc.approved.push(request);
-            else if (request.status === "Rejected") acc.rejected.push(request);
-        }
-
-        return acc;
+    return visibleRequests.reduce((acc, request) => {
+      if (request.status === "Pending") acc.pending.push(request);
+      else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
+      else if (request.status === "Approved") acc.approved.push(request);
+      else if (request.status === "Rejected") acc.rejected.push(request);
+      return acc;
     }, defaultCategories);
 
-  }, [leaveRequests, currentUser, role, isOwner, isRH, isManager, isDev, employeeMap, departments]);
+  }, [leaveRequests, currentUser, role, employeeMap, departments, isOwner, isRH, isManager, isDev]);
 
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
