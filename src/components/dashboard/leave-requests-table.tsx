@@ -146,7 +146,8 @@ export default function LeaveRequestsTable({
   };
 
   const categorizedRequests = useMemo(() => {
-    if (!currentUser) return { pending: [], preApproved: [], approved: [], rejected: [] };
+    const defaultCategories = { pending: [], preApproved: [], approved: [], rejected: [] };
+    if (!currentUser) return defaultCategories;
 
     let visibleRequests: LeaveRequest[] = [];
 
