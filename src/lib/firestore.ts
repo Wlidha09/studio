@@ -13,6 +13,7 @@ import { adminApp } from './firebase-admin';
 // Helper function to convert Firestore Timestamps to strings
 const convertDocTimestamps = (doc: any) => {
   const data = doc.data();
+  if (!data) return { id: doc.id };
   for (const key in data) {
     if (data[key] instanceof Timestamp) {
       // Return ISO string for dates
