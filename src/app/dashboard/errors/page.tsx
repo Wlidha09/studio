@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Bug, ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import { getErrors } from "@/lib/firestore";
 import { updateErrorStatusAction } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
-type SortKey = "level" | "message" | "file" | "count" | "status" | "timestamp";
+type SortKey = keyof ErrorLog;
 
 const levelColors: Record<string, string> = {
   error: "bg-red-500 text-white",
@@ -69,18 +69,24 @@ export default function ErrorsPage() {
     }
   };
 
-  const sortedErrors = [...errors].sort((a, b) => {
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+  const sortedErrors = useMemo(() => {
+    let sortableItems = [...errors];
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
 
-    if (aValue < bValue) {
-      return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
     }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'ascending' ? 1 : -1;
-    }
-    return 0;
-  });
+    return sortableItems;
+  }, [errors, sortConfig]);
 
   const requestSort = (key: SortKey) => {
     let direction: 'ascending' | 'descending' = 'ascending';
