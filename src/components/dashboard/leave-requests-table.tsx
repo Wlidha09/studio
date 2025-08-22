@@ -76,6 +76,7 @@ export default function LeaveRequestsTable({
   const isRH = role === 'RH';
   const isOwner = role === 'Owner';
   const isManager = role === 'Manager';
+  const isDev = role === 'Dev';
 
   const canCreate = hasPermission("leaves", "create");
   const canEdit = hasPermission("leaves", "edit");
@@ -154,36 +155,33 @@ export default function LeaveRequestsTable({
   const categorizedRequests = useMemo(() => {
     const defaultCategories = { pending: [], preApproved: [], approved: [], rejected: [] };
     if (!currentUser) return defaultCategories;
-
-    let filteredRequests: LeaveRequest[];
-
-    if (isOwner || isRH || role === 'Dev') {
-      // Owner, RH, and Dev can see all requests
-      filteredRequests = leaveRequests;
-    } else if (isManager) {
-      // Manager can see their own requests and pending requests from their team
-      const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
-      filteredRequests = leaveRequests.filter(request => {
+    
+    return leaveRequests.reduce((acc, request) => {
         const employeeOfRequest = employeeMap.get(request.employeeId);
         const isMyRequest = request.employeeId === currentUser.id;
-        const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
-        // Show my requests (all statuses) OR pending requests from my team
-        return isMyRequest || (isMyTeamRequest && request.status === 'Pending');
-      });
-    } else {
-      // Employee can only see their own requests
-      filteredRequests = leaveRequests.filter(request => request.employeeId === currentUser.id);
-    }
-    
-    return filteredRequests.reduce((acc, request) => {
-        if (request.status === "Pending") acc.pending.push(request);
-        else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
-        else if (request.status === "Approved") acc.approved.push(request);
-        else if (request.status === "Rejected") acc.rejected.push(request);
+        let isVisible = false;
+
+        if (isOwner || isRH || isDev) {
+            isVisible = true;
+        } else if (isManager) {
+            const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;
+            const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
+            isVisible = isMyRequest || (isMyTeamRequest && request.status === 'Pending');
+        } else { // Employee
+            isVisible = isMyRequest;
+        }
+        
+        if (isVisible) {
+            if (request.status === "Pending") acc.pending.push(request);
+            else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
+            else if (request.status === "Approved") acc.approved.push(request);
+            else if (request.status === "Rejected") acc.rejected.push(request);
+        }
+
         return acc;
     }, defaultCategories);
 
-  }, [leaveRequests, currentUser, role, isOwner, isRH, isManager, employeeMap, departments]);
+  }, [leaveRequests, currentUser, role, isOwner, isRH, isManager, isDev, employeeMap, departments]);
 
 
   const getManagerApprovalAction = (request: LeaveRequest) => {
