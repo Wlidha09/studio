@@ -25,7 +25,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 )
 
-const ALLOWED_DOMAIN = "contractor.atolls.com";
+const ALLOWED_DOMAIN = "hresource.com";
 
 
 export default function LoginPage() {

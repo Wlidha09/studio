@@ -1,23 +1,24 @@
+
 import { Employee, Candidate, Department, LeaveRequest } from "./types";
 
 export const employees: Omit<Employee, 'id'>[] = [
-  { name: "Hannah Montana", email: "hannah.m@example.com", role: "Owner", department: "Executive", avatar: "/avatars/08.png", hireDate: "2019-01-01", birthDate: "1980-01-01", actif: true },
-  { name: "Alice Johnson", email: "alice.j@example.com", role: "Manager", department: "Engineering", avatar: "/avatars/01.png", hireDate: "2022-01-15", birthDate: "1988-05-20", actif: true, managerName: "Hannah Montana" },
-  { name: "Bob Williams", email: "bob.w@example.com", role: "Employee", department: "Engineering", avatar: "/avatars/02.png", hireDate: "2022-03-10", birthDate: "1992-11-30", actif: true, managerName: "Alice Johnson" },
-  { name: "Charlie Brown", email: "charlie.b@example.com", role: "Employee", department: "Engineering", avatar: "/avatars/03.png", hireDate: "2023-06-01", birthDate: "1995-02-18", actif: true, managerName: "Alice Johnson" },
-  { name: "Diana Prince", email: "diana.p@example.com", role: "Manager", department: "HR", avatar: "/avatars/04.png", hireDate: "2021-09-20", birthDate: "1985-07-22", actif: true, managerName: "Hannah Montana" },
-  { name: "Ethan Hunt", email: "ethan.h@example.com", role: "RH", department: "HR", avatar: "/avatars/05.png", hireDate: "2020-11-05", birthDate: "1989-12-15", actif: true, managerName: "Diana Prince" },
-  { name: "Fiona Glenanne", email: "fiona.g@example.com", role: "Manager", department: "Marketing", avatar: "/avatars/06.png", hireDate: "2022-02-18", birthDate: "1990-08-10", actif: false, managerName: "Hannah Montana" },
-  { name: "George Costanza", email: "george.c@example.com", role: "Employee", department: "Marketing", avatar: "/avatars/07.png", hireDate: "2023-08-21", birthDate: "1993-04-05", actif: true, managerName: "Fiona Glenanne" },
-  { name: "Ian Malcolm", email: "ian.m@example.com", role: "Dev", department: "Dev", avatar: "/avatars/09.png", hireDate: "2024-01-10", birthDate: "1982-03-03", isDev: true, actif: true, managerName: "Hannah Montana" },
+  { name: "Hannah Montana", email: "hannah.montana@hresource.com", role: "Owner", department: "Executive", avatar: "https://placehold.co/40x40.png?text=HM", hireDate: "2019-01-01", birthDate: "1980-01-01", actif: true, fcmToken: "token-hannah-montana" },
+  { name: "Alice Johnson", email: "alice.johnson@hresource.com", role: "Manager", department: "Engineering", avatar: "https://placehold.co/40x40.png?text=AJ", hireDate: "2022-01-15", birthDate: "1988-05-20", actif: true, managerName: "Hannah Montana", fcmToken: "token-alice-johnson" },
+  { name: "Bob Williams", email: "bob.williams@hresource.com", role: "Employee", department: "Engineering", avatar: "https://placehold.co/40x40.png?text=BW", hireDate: "2022-03-10", birthDate: "1992-11-30", actif: true, managerName: "Alice Johnson", fcmToken: "token-bob-williams" },
+  { name: "Charlie Brown", email: "charlie.brown@hresource.com", role: "Employee", department: "Engineering", avatar: "https://placehold.co/40x40.png?text=CB", hireDate: "2023-06-01", birthDate: "1995-02-18", actif: true, managerName: "Alice Johnson", fcmToken: "token-charlie-brown" },
+  { name: "Diana Prince", email: "diana.prince@hresource.com", role: "Manager", department: "HR", avatar: "https://placehold.co/40x40.png?text=DP", hireDate: "2021-09-20", birthDate: "1985-07-22", actif: true, managerName: "Hannah Montana", fcmToken: "token-diana-prince" },
+  { name: "Ethan Hunt", email: "ethan.hunt@hresource.com", role: "RH", department: "HR", avatar: "https://placehold.co/40x40.png?text=EH", hireDate: "2020-11-05", birthDate: "1989-12-15", actif: true, managerName: "Diana Prince", fcmToken: "token-ethan-hunt" },
+  { name: "Fiona Glenanne", email: "fiona.glenanne@hresource.com", role: "Manager", department: "Marketing", avatar: "https://placehold.co/40x40.png?text=FG", hireDate: "2022-02-18", birthDate: "1990-08-10", actif: false, managerName: "Hannah Montana", fcmToken: "token-fiona-glenanne" },
+  { name: "George Costanza", email: "george.costanza@hresource.com", role: "Employee", department: "Marketing", avatar: "https://placehold.co/40x40.png?text=GC", hireDate: "2023-08-21", birthDate: "1993-04-05", actif: true, managerName: "Fiona Glenanne", fcmToken: "token-george-costanza" },
+  { name: "Ian Malcolm", email: "ian.malcolm@hresource.com", role: "Dev", department: "Dev", avatar: "https://placehold.co/40x40.png?text=IM", hireDate: "2024-01-10", birthDate: "1982-03-03", isDev: true, actif: true, managerName: "Hannah Montana", fcmToken: "token-ian-malcolm" },
 ];
 
 export const candidates: Omit<Candidate, 'id'>[] = [
-  { name: "Jack Sparrow", email: "jack.s@pirates.com", status: "Interviewing", appliedRole: "Frontend Developer", avatar: "/avatars/10.png" },
-  { name: "Kara Danvers", email: "kara.d@catco.com", status: "Applied", appliedRole: "UX Designer", avatar: "/avatars/11.png" },
-  { name: "Luke Skywalker", email: "luke.s@rebellion.org", status: "Offered", appliedRole: "Backend Developer", avatar: "/avatars/12.png" },
-  { name: "Marge Simpson", email: "marge.s@evergreen.com", status: "Hired", appliedRole: "HR Coordinator", avatar: "/avatars/13.png" },
-  { name: "Ned Stark", email: "ned.s@winterfell.gov", status: "Rejected", appliedRole: "Project Manager", avatar: "/avatars/14.png" },
+  { name: "Jack Sparrow", email: "jack.sparrow@hresource.com", status: "Interviewing", appliedRole: "Frontend Developer", avatar: "https://placehold.co/40x40.png?text=JS" },
+  { name: "Kara Danvers", email: "kara.danvers@hresource.com", status: "Applied", appliedRole: "UX Designer", avatar: "https://placehold.co/40x40.png?text=KD" },
+  { name: "Luke Skywalker", email: "luke.skywalker@hresource.com", status: "Offered", appliedRole: "Backend Developer", avatar: "https://placehold.co/40x40.png?text=LS" },
+  { name: "Marge Simpson", email: "marge.simpson@hresource.com", status: "Hired", appliedRole: "HR Coordinator", avatar: "https://placehold.co/40x40.png?text=MS" },
+  { name: "Ned Stark", email: "ned.stark@hresource.com", status: "Rejected", appliedRole: "Project Manager", avatar: "https://placehold.co/40x40.png?text=NS" },
 ];
 
 export const departments: Omit<Department, 'id'>[] = [
