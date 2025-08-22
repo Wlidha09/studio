@@ -63,3 +63,14 @@ export type NotificationPayload = {
     title: string;
     body: string;
 };
+
+export type ErrorLog = {
+    id: string;
+    message: string;
+    file: string;
+    stackTrace: string;
+    count: number;
+    status: 'unresolved' | 'resolved' | 'ignored';
+    level: 'error' | 'warning' | 'info';
+    timestamp: string;
+};

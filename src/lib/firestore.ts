@@ -3,9 +3,9 @@
 "use server";
 
 import { db } from './firebase';
-import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, query, where, getDoc, runTransaction } from 'firebase/firestore';
 import { employees as initialEmployees, candidates as initialCandidates, departments as initialDepartments, leaveRequests as initialLeaveRequests } from './data';
-import type { Employee, Candidate, Department, LeaveRequest, Holiday, WorkSchedule, UserRole } from './types';
+import type { Employee, Candidate, Department, LeaveRequest, Holiday, WorkSchedule, UserRole, ErrorLog } from './types';
 import { getMessaging } from "firebase-admin/messaging";
 import { adminApp } from './firebase-admin';
 
@@ -16,7 +16,7 @@ const convertDocTimestamps = (doc: any) => {
   for (const key in data) {
     if (data[key] instanceof Timestamp) {
       // Return ISO string for dates
-      data[key] = data[key].toDate().toISOString().split('T')[0];
+      data[key] = data[key].toDate().toISOString();
     }
   }
   return { id: doc.id, ...data };
@@ -25,7 +25,7 @@ const convertDocTimestamps = (doc: any) => {
 // Seed Database
 export async function seedDatabase() {
   try {
-    const collectionsToClear = ['employees', 'candidates', 'departments', 'leaveRequests', 'holidays', 'workSchedules'];
+    const collectionsToClear = ['employees', 'candidates', 'departments', 'leaveRequests', 'holidays', 'workSchedules', 'errors'];
     const batch = writeBatch(db);
 
     // Clear existing data in collections
@@ -296,4 +296,39 @@ export async function sendNotification(token: string, title: string, body: strin
     } catch (error) {
         console.error("Error sending notification:", error);
     }
+}
+
+// Error Logging Functions
+export async function getErrors(): Promise<ErrorLog[]> {
+  const querySnapshot = await getDocs(collection(db, 'errors'));
+  return querySnapshot.docs.map(doc => convertDocTimestamps(doc) as ErrorLog);
+}
+
+export async function addError(errorLog: Omit<ErrorLog, 'id' | 'timestamp' | 'count' | 'status'>): Promise<void> {
+  const errorsRef = collection(db, 'errors');
+  const q = query(errorsRef, where("message", "==", errorLog.message), where("file", "==", errorLog.file));
+
+  await runTransaction(db, async (transaction) => {
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      // Error exists, increment count and update timestamp
+      const errorDoc = querySnapshot.docs[0];
+      const newCount = (errorDoc.data().count || 1) + 1;
+      transaction.update(errorDoc.ref, { count: newCount, timestamp: serverTimestamp() });
+    } else {
+      // New error, add it
+      const newDocRef = doc(errorsRef);
+      transaction.set(newDocRef, { 
+        ...errorLog, 
+        count: 1, 
+        status: 'unresolved', 
+        timestamp: serverTimestamp() 
+      });
+    }
+  });
+}
+
+export async function updateErrorStatus(id: string, status: ErrorLog['status']): Promise<void> {
+    const docRef = doc(db, 'errors', id);
+    await updateDoc(docRef, { status });
 }
