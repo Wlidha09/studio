@@ -42,9 +42,9 @@ const initialPermissions: RolePermissions = {
     },
     RH: {
         overview: { view: true },
-        employees: { view: true, create: true, edit: true, delete: false },
+        employees: allPermissions,
         candidates: allPermissions,
-        departments: { view: true, create: true, edit: true, delete: false },
+        departments: allPermissions,
         leaves: allPermissions,
         attendance: allPermissions,
         tickets: allPermissions,

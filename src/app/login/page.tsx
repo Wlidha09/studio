@@ -96,7 +96,7 @@ export default function LoginPage() {
         return true;
     }
     
-    const handleAuthSuccess = async (user: User, isNewRegistration: boolean) => {
+    const handleAuthSuccess = async (user: User) => {
       if (!user.email) return;
 
       const isActive = await checkUserStatus(user.email);
@@ -107,7 +107,7 @@ export default function LoginPage() {
       }
 
       const existingEmployee = await getEmployeeByEmail(user.email);
-      if (!existingEmployee && (isNewRegistration || isGoogleLoading)) {
+      if (!existingEmployee) {
           await createNewEmployeeProfile(user);
       }
       
@@ -135,7 +135,7 @@ export default function LoginPage() {
                 : await signInWithEmail(email, password);
 
             if (user) {
-                await handleAuthSuccess(user, isRegisterMode);
+                await handleAuthSuccess(user);
             } else {
                  handleAuthError({code: 'auth/generic-error'});
             }
@@ -162,7 +162,7 @@ export default function LoginPage() {
                     return;
                 }
 
-                await handleAuthSuccess(user, false);
+                await handleAuthSuccess(user);
             }
         } catch (error) {
             handleAuthError(error);
@@ -237,5 +237,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
-    

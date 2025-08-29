@@ -99,8 +99,8 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
         }
     }
     
-    // For regular employees, show employees in the same department
-    return employees.filter(e => e.department === currentUser.department);
+    // For regular employees, show only themselves
+    return employees.filter(e => e.id === currentUser.id);
 
   }, [employees, currentUser, role, departments]);
 

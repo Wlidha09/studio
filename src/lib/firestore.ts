@@ -105,11 +105,7 @@ export async function getLeaveRequests(): Promise<LeaveRequest[]> {
     const querySnapshot = await getDocs(collection(db, 'leaveRequests'));
     const requests = querySnapshot.docs.map(doc => {
         const data = convertDocTimestamps(doc);
-        const employee = {
-            ...data,
-            employeeName: data.employeeName || "Unknown"
-        };
-        return employee as LeaveRequest;
+        return data as LeaveRequest;
     });
     console.log(`API Response: Found ${requests.length} leave requests.`);
     return requests;

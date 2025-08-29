@@ -159,7 +159,7 @@ export default function LeaveRequestsTable({
     const managerDepartmentName = isManager ? departments.find(d => d.teamLeader === currentUser.name)?.name : undefined;
 
     const visibleRequests = leaveRequests.filter(request => {
-      // Owner, HR, and Dev can see all requests
+      // Owner, RH, and Dev can see all requests
       if (isOwner || isRH || isDev) {
         return true;
       }
@@ -170,33 +170,18 @@ export default function LeaveRequestsTable({
       // Manager can see their own requests and pending requests from their team
       if (isManager) {
         const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
-        return isMyRequest || (isMyTeamRequest && request.status === 'Pending');
+        return isMyRequest || isMyTeamRequest;
       }
       
       // Default employee can only see their own requests
       return isMyRequest;
     });
     
-    return leaveRequests.reduce((acc, request) => {
-        const isVisibleToCurrentUser = () => {
-            if (isOwner || isRH || isDev) return true;
-            if (isManager) {
-                const requestingEmployee = employeeMap.get(request.employeeId);
-                const isMyTeam = requestingEmployee?.department === managerDepartmentName;
-                // A manager can see their own requests, plus their team's requests that are pending.
-                return request.employeeId === currentUser.id || (isMyTeam && request.status === 'Pending');
-            }
-            // Regular employees can only see their own requests.
-            return request.employeeId === currentUser.id;
-        };
-
-        if (isVisibleToCurrentUser()) {
-            if (request.status === "Pending") acc.pending.push(request);
-            else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
-            else if (request.status === "Approved") acc.approved.push(request);
-            else if (request.status === "Rejected") acc.rejected.push(request);
-        }
-
+    return visibleRequests.reduce((acc, request) => {
+        if (request.status === "Pending") acc.pending.push(request);
+        else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
+        else if (request.status === "Approved") acc.approved.push(request);
+        else if (request.status === "Rejected") acc.rejected.push(request);
         return acc;
     }, defaultCategories);
 
