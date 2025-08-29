@@ -159,7 +159,7 @@ export default function LeaveRequestsTable({
     const managerDepartmentName = isManager ? departments.find(d => d.teamLeader === currentUser.name)?.name : undefined;
 
     const visibleRequests = leaveRequests.filter(request => {
-      // Owner, RH, and Dev can see all requests
+      // Owner, RH, and Dev can see all requests. This is the primary check.
       if (isOwner || isRH || isDev) {
         return true;
       }
@@ -167,13 +167,13 @@ export default function LeaveRequestsTable({
       const employeeOfRequest = employeeMap.get(request.employeeId);
       const isMyRequest = request.employeeId === currentUser.id;
 
-      // Manager can see their own requests and pending requests from their team
+      // Manager can see their own requests and any request from their team members.
       if (isManager) {
         const isMyTeamRequest = employeeOfRequest?.department === managerDepartmentName;
         return isMyRequest || isMyTeamRequest;
       }
       
-      // Default employee can only see their own requests
+      // Default: regular employees can only see their own requests
       return isMyRequest;
     });
     
