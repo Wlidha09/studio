@@ -23,6 +23,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
             if(employee) {
                 if (employee.isDev) {
                     setRole('Dev');
+                } else if (employee.isHr) {
+                    setRole('RH');
                 } else if (employee.role) {
                     setRole(employee.role);
                 }

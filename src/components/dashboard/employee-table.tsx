@@ -124,7 +124,8 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
     const formData = new FormData(e.currentTarget);
     const employeeData = {
         ...Object.fromEntries(formData.entries()),
-        actif: formData.get('actif') === 'on'
+        actif: formData.get('actif') === 'on',
+        isHr: formData.get('isHr') === 'on',
     } as Omit<Employee, 'id' | 'avatar'>;
     
     if (editingEmployee) {
@@ -304,6 +305,10 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="actif" className="text-right">Active</Label>
                 <Switch id="actif" name="actif" defaultChecked={editingEmployee?.actif ?? true} />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="isHr" className="text-right">Is HR?</Label>
+                <Switch id="isHr" name="isHr" defaultChecked={editingEmployee?.isHr ?? false} />
               </div>
             </div>
             <DialogFooter>

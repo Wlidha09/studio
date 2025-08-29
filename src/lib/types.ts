@@ -14,6 +14,7 @@ export type Employee = {
   hireDate: string;
   birthDate: string;
   isDev?: boolean;
+  isHr?: boolean;
   actif: boolean;
   managerName?: string;
   fcmToken?: string;
@@ -74,3 +75,4 @@ export type ErrorLog = {
     level: 'error' | 'warning' | 'info';
     timestamp: string;
 };
+
