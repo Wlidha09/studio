@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Bug, ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,7 +23,7 @@ import { getErrors } from "@/lib/firestore";
 import { updateErrorStatusAction } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
-type SortKey = keyof ErrorLog;
+type SortKey = keyof ErrorLog | 'timestamp';
 
 const levelColors: Record<string, string> = {
   error: "bg-red-500 text-white",
@@ -73,8 +73,15 @@ export default function ErrorsPage() {
     let sortableItems = [...errors];
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        let aValue, bValue;
+
+        if (sortConfig.key === 'timestamp') {
+          aValue = a.timestamp ? parseISO(a.timestamp).getTime() : 0;
+          bValue = b.timestamp ? parseISO(b.timestamp).getTime() : 0;
+        } else {
+          aValue = a[sortConfig.key as keyof ErrorLog];
+          bValue = b[sortConfig.key as keyof ErrorLog];
+        }
 
         if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -145,7 +152,7 @@ export default function ErrorsPage() {
                         sortedErrors.map((error) => (
                             <TableRow key={error.id}>
                                 <TableCell>
-                                    {format(new Date(error.timestamp), "yyyy-MM-dd HH:mm:ss")}
+                                    {error.timestamp ? format(parseISO(error.timestamp), "yyyy-MM-dd HH:mm:ss") : 'N/A'}
                                 </TableCell>
                                 <TableCell>
                                     <Badge className={levelColors[error.level]}>{error.level}</Badge>
