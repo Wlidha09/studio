@@ -209,7 +209,7 @@ export default function LeaveRequestsTable({
     return null;
   }
   
-  const getRHApprovalAction = (request: LeaveRequest) => {
+  const getFinalApprovalAction = (request: LeaveRequest) => {
      if ((isOwner || isRH) && request.status === "ApprovedByManager") {
         return (
             <DropdownMenuItem onClick={() => handleStatusChange(request.id, "Approved")}>
@@ -275,9 +275,9 @@ export default function LeaveRequestsTable({
           ) : (
             requests.map((request) => {
               const managerApprovalAction = getManagerApprovalAction(request);
-              const rhApprovalAction = getRHApprovalAction(request);
+              const finalApprovalAction = getFinalApprovalAction(request);
               const rejectAction = getRejectAction(request);
-              const canPerformAction = canEdit && (managerApprovalAction || rhApprovalAction || rejectAction);
+              const canPerformAction = canEdit && (managerApprovalAction || finalApprovalAction || rejectAction);
               const employeeName = employeeMap.get(request.employeeId)?.name || 'Unknown Employee';
 
               return (
@@ -308,7 +308,7 @@ export default function LeaveRequestsTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {managerApprovalAction}
-                          {rhApprovalAction}
+                          {finalApprovalAction}
                           {rejectAction}
                         </DropdownMenuContent>
                       </DropdownMenu>
