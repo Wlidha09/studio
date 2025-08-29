@@ -177,12 +177,27 @@ export default function LeaveRequestsTable({
       return isMyRequest;
     });
     
-    return visibleRequests.reduce((acc, request) => {
-      if (request.status === "Pending") acc.pending.push(request);
-      else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
-      else if (request.status === "Approved") acc.approved.push(request);
-      else if (request.status === "Rejected") acc.rejected.push(request);
-      return acc;
+    return leaveRequests.reduce((acc, request) => {
+        const isVisibleToCurrentUser = () => {
+            if (isOwner || isRH || isDev) return true;
+            if (isManager) {
+                const requestingEmployee = employeeMap.get(request.employeeId);
+                const isMyTeam = requestingEmployee?.department === managerDepartmentName;
+                // A manager can see their own requests, plus their team's requests that are pending.
+                return request.employeeId === currentUser.id || (isMyTeam && request.status === 'Pending');
+            }
+            // Regular employees can only see their own requests.
+            return request.employeeId === currentUser.id;
+        };
+
+        if (isVisibleToCurrentUser()) {
+            if (request.status === "Pending") acc.pending.push(request);
+            else if (request.status === "ApprovedByManager") acc.preApproved.push(request);
+            else if (request.status === "Approved") acc.approved.push(request);
+            else if (request.status === "Rejected") acc.rejected.push(request);
+        }
+
+        return acc;
     }, defaultCategories);
 
   }, [leaveRequests, currentUser, role, employeeMap, departments, isOwner, isRH, isManager, isDev]);
