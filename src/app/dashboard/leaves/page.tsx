@@ -1,6 +1,8 @@
 import LeaveRequestsTable from "@/components/dashboard/leave-requests-table";
 import { getLeaveRequests, getEmployees, getDepartments } from "@/lib/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export default async function LeavesPage() {
   const leaveRequests = await getLeaveRequests();
   const employees = await getEmployees();
