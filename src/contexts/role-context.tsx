@@ -1,9 +1,9 @@
 
+
 "use client";
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useAuth } from './auth-context';
-import { getEmployeeByEmail } from '@/lib/firestore';
 
 interface RoleContextType {
   role: string;
@@ -14,25 +14,27 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<string>('Employee'); // Default to least privileged
-  const { user } = useAuth();
+  const { employee, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    async function fetchUserRole() {
-        if(user && user.email) {
-            const employee = await getEmployeeByEmail(user.email);
-            if(employee) {
-                if (employee.isDev) {
-                    setRole('Dev');
-                } else if (employee.isHr) {
-                    setRole('RH');
-                } else if (employee.role) {
-                    setRole(employee.role);
-                }
-            }
-        }
+    if (authLoading) {
+      return; // Wait for auth to finish loading
     }
-    fetchUserRole();
-  }, [user])
+    
+    if (employee) {
+        if (employee.isDev) {
+            setRole('Dev');
+        } else if (employee.isHr) {
+            setRole('RH');
+        } else if (employee.role) {
+            setRole(employee.role);
+        } else {
+            setRole('Employee');
+        }
+    } else {
+        setRole('Employee'); // Default for logged-out users
+    }
+  }, [employee, authLoading]);
 
   return (
     <RoleContext.Provider value={{ role, setRole }}>

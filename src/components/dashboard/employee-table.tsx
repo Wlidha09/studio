@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -93,10 +94,14 @@ export default function EmployeeTable({ initialEmployees, departments }: Employe
     }
 
     if (role === 'Manager') {
+        // Find the department where the current user is the team leader
         const managerDepartment = departments.find(d => d.teamLeader === currentUser.name);
         if (managerDepartment) {
+            // Filter employees who are in that department
             return employees.filter(e => e.department === managerDepartment.name);
         }
+        // if manager is not a team leader of any department, show only themselves
+        return employees.filter(e => e.id === currentUser.id);
     }
     
     // For regular employees, show only themselves

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -125,11 +126,12 @@ export default function LeaveRequestsTable({
       endDate: formData.get("endDate") as string,
     };
     
-    const isLeader = !!departments.find(d => d.teamLeader === currentUser.name);
+    // A Manager's request needs approval from RH/Owner, so it starts as 'ApprovedByManager'
+    const initialStatus = isManager ? "ApprovedByManager" : "Pending";
 
     const newRequestData: Omit<LeaveRequest, "id"> = {
       employeeId: currentUser.id,
-      status: isLeader ? "ApprovedByManager" : "Pending", // Skip manager approval for leaders
+      status: initialStatus,
       ...leaveData,
       createdAt: new Date().toISOString(),
     };
@@ -192,6 +194,7 @@ export default function LeaveRequestsTable({
     if (!currentUser || !isManager || request.status !== 'Pending') return null;
 
     const requestingEmployee = employeeMap.get(request.employeeId);
+    // A manager cannot approve their own request.
     if (!requestingEmployee || requestingEmployee.id === currentUser.id) return null;
 
     const managerDepartmentName = departments.find(d => d.teamLeader === currentUser.name)?.name;

@@ -36,12 +36,19 @@ export default function SchedulePage() {
     setWeekToShow(nextWeekDays);
   }, []);
 
+  const fetchSchedulesAndEmployees = async () => {
+    const allSchedules = await getWorkSchedules();
+    const allEmployees = await getEmployees();
+    setSchedules(allSchedules);
+    setEmployees(allEmployees);
+    return allSchedules;
+  };
+
    useEffect(() => {
     async function fetchUserData() {
       if (employee && weekToShow.length > 0) {
         setIsLoading(true);
-        const allSchedules = await getWorkSchedules();
-        setSchedules(allSchedules);
+        const allSchedules = await fetchSchedulesAndEmployees();
 
         const nextWeekStartString = format(weekToShow[0], 'yyyy-MM-dd');
 
@@ -56,9 +63,6 @@ export default function SchedulePage() {
         if (userScheduleForNextWeek) {
           setSelectedDays(userScheduleForNextWeek.dates.map(d => parseISO(d)));
           setHasSubmitted(true);
-          // If user has submitted, we also need employee data for the table
-          const allEmployees = await getEmployees();
-          setEmployees(allEmployees);
         } else {
           setSelectedDays([]);
           setHasSubmitted(false);
@@ -123,9 +127,8 @@ export default function SchedulePage() {
         };
         await addWorkSchedule(scheduleData);
         setHasSubmitted(true);
-        // Refetch employees for the table view
-        const allEmployees = await getEmployees();
-        setEmployees(allEmployees);
+        // Refetch schedules and employees for the table view
+        await fetchSchedulesAndEmployees();
         toast({
             title: "Schedule Submitted!",
             description: `Your preferred days for next week have been saved.`,
@@ -207,5 +210,6 @@ export default function SchedulePage() {
       </Card>
   );
 }
+
 
 
