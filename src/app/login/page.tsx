@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { FirebaseError } from "firebase/app";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getEmployeeByEmail, addEmployee, type Employee } from "@/lib/firestore";
+import { addEmployee, type Employee } from "@/lib/firestore";
 import { format } from "date-fns";
 import type { User } from "firebase/auth";
 
@@ -25,7 +25,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 )
 
-const ALLOWED_DOMAIN = "hresource.com";
+const ALLOWED_DOMAIN = "contractor.atolls.com";
 
 
 export default function LoginPage() {
@@ -53,8 +53,6 @@ export default function LoginPage() {
                 description = "Invalid email or password. Please try again.";
             } else if (firebaseError.code === 'auth/user-disabled') {
                 description = "This user account has been disabled by an administrator.";
-            } else if (firebaseError.code === 'auth/inactive-user') {
-                description = "This user account is inactive. Please contact an administrator.";
             }
         }
         
@@ -67,50 +65,8 @@ export default function LoginPage() {
         }
     }
     
-    const createNewEmployeeProfile = async (user: User) => {
-        const newEmployeeData: Omit<Employee, 'id'> = {
-            name: user.displayName || 'New User',
-            email: user.email!,
-            role: 'Employee',
-            department: 'Unassigned',
-            avatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.email!.charAt(0)}`,
-            hireDate: format(new Date(), 'yyyy-MM-dd'),
-            birthDate: '',
-            actif: true, // Default to active
-        };
-        await addEmployee(newEmployeeData);
-        toast({ title: "Welcome!", description: "Your employee profile has been created." });
-    }
-
-    const checkUserStatus = async (email: string): Promise<boolean> => {
-        const employee = await getEmployeeByEmail(email);
-        // If employee doesn't exist yet, it's a new registration, so we allow it.
-        if (!employee) {
-            return true;
-        }
-        // If employee exists, check if they are active.
-        if (!employee.actif) {
-            handleAuthError({ code: 'auth/inactive-user' });
-            return false;
-        }
-        return true;
-    }
-    
     const handleAuthSuccess = async (user: User) => {
       if (!user.email) return;
-
-      const isActive = await checkUserStatus(user.email);
-      if (!isActive) {
-        setIsLoading(false);
-        setIsGoogleLoading(false);
-        return;
-      }
-
-      const existingEmployee = await getEmployeeByEmail(user.email);
-      if (!existingEmployee) {
-          await createNewEmployeeProfile(user);
-      }
-      
       router.push("/dashboard");
     };
 
